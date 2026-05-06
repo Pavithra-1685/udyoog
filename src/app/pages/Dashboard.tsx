@@ -49,14 +49,17 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem('careerPathway_auth');
-    if (savedAuth) {
-      const { email } = JSON.parse(savedAuth);
-      setUserEmail(email);
-    }
-
-    fetchCompanies();
-  }, []);
+    const initDashboard = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || '');
+      } else {
+        navigate('/');
+      }
+      fetchCompanies();
+    };
+    initDashboard();
+  }, [navigate]);
 
   // Note: Persisting to Supabase via handlers below
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { LayoutDashboard, BarChart3, User, Archive, LogOut, Menu, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import tuLogo from 'logo/tu.png';
 
 interface NavigationProps {
@@ -20,7 +21,8 @@ export default function Navigation({ userEmail }: NavigationProps) {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('careerPathway_auth');
     navigate('/');
   };

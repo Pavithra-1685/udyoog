@@ -26,10 +26,12 @@ export default function Profile() {
         setUserEmail(user.email || '');
         setFullName(user.user_metadata?.full_name || '');
         setJoinDate(new Date(user.created_at).toLocaleDateString());
+      } else {
+        navigate('/');
       }
     };
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
