@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { User, Mail, Calendar, Save, Lock, Eye, EyeOff } from 'lucide-react';
 import Navigation from '../components/Navigation';
@@ -6,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { toast, Toaster } from 'sonner';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [joinDate, setJoinDate] = useState('');
