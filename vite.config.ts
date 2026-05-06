@@ -28,7 +28,7 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
-      'logo': path.resolve(__dirname, './logo'),
+      'logo': path.resolve(__dirname, './public/logo'),
     },
   },
 
