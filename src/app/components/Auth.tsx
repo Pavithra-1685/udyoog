@@ -41,6 +41,12 @@ export default function Auth({ onLogin }: AuthProps) {
         toast.success('Password reset link has been dispatched! Please check your inbox and spam folder.');
         setMode('login');
       } else if (mode === 'signup') {
+        if (!fullName.trim()) {
+          throw new Error('Please provide your full name to initialize the secure account.');
+        }
+        if (password.length < 6) {
+          throw new Error('Security requirement: Password must be at least 6 characters long.');
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -199,6 +205,7 @@ export default function Auth({ onLogin }: AuthProps) {
                     className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white/50"
                     placeholder=""
                     required
+                    minLength={6}
                   />
                   <button
                     type="button"
