@@ -268,7 +268,9 @@ export default function Auth({ onLogin }: AuthProps) {
           <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center gap-4">
             <button
               onClick={testConnection}
-              className="text-xs text-gray-400 hover:text-[#e0653b] transition-colors flex items-center gap-2" >
+              className="text-xs text-gray-400 hover:text-[#e0653b] transition-colors flex items-center gap-2"
+            />
+    
         </div>
       </motion.div>
     </div>
