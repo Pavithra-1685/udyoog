@@ -37,7 +37,8 @@ export default function Analytics() {
 
         const { data, error } = await supabase
           .from('companies')
-          .select('*, positions(*), activities(*)');
+          .select('*, positions(*), activities(*)')
+          .neq('stage', 'closure');
         
         if (error) throw error;
         setCompanies(data || []);

@@ -35,6 +35,7 @@ export default function Dashboard() {
           positions (*),
           activities (*)
         `)
+        .neq('stage', 'closure')
         .order('created_at', { ascending: false });
 
       if (companiesError) throw companiesError;
