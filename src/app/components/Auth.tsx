@@ -268,15 +268,7 @@ export default function Auth({ onLogin }: AuthProps) {
           <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col items-center gap-4">
             <button
               onClick={testConnection}
-              className="text-xs text-gray-400 hover:text-[#e0653b] transition-colors flex items-center gap-2"
-            >
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Check Infrastructure Status
-            </button>
-            <p className="text-[10px] text-gray-300 uppercase tracking-tighter">
-              Protected by Takshishila Security Protocol
-            </p>
-          </div>
+              className="text-xs text-gray-400 hover:text-[#e0653b] transition-colors flex items-center gap-2" >
         </div>
       </motion.div>
     </div>
