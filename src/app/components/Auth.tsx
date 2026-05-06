@@ -82,7 +82,18 @@ export default function Auth({ onLogin }: AuthProps) {
       }
     } catch (error: any) {
       console.error('Auth Error:', error);
-      toast.error(error.message || 'Authentication failed');
+      
+      let message = error.message || 'Authentication failed';
+      
+      if (error.status === 429 || error.message?.includes('rate limit')) {
+        message = 'Too many attempts. Please wait a few minutes before trying again to maintain secure access.';
+      } else if (error.status === 422) {
+        message = 'Validation failed. Please ensure your email is valid and your password meets security requirements (minimum 6 characters).';
+      } else if (error.message === 'Email not confirmed') {
+        message = 'Please verify your email address before signing in. Check your inbox for the confirmation link.';
+      }
+      
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
