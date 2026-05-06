@@ -75,13 +75,9 @@ export default function Profile() {
     }
   };
 
-  const handleGenerateSummary = () => {
-    toast.info('Navigate to Dashboard to generate AI insights.');
-  };
-
   return (
     <div className="min-h-screen bg-white">
-      <Navigation userEmail={userEmail} onGenerateSummary={handleGenerateSummary} />
+      <Navigation userEmail={userEmail} />
 
       <div className="max-w-3xl mx-auto px-4 py-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -90,7 +86,7 @@ export default function Profile() {
           </h1>
 
           {/* Profile Information */}
-          <div className="backdrop-blur-lg bg-white/70 rounded-2xl shadow-lg border border-gray-200/50 p-8 mb-6">
+          <div className="backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-gray-200/50 p-6 sm:p-8 mb-6">
             <h3 className="text-lg mb-6" style={{ color: '#142361' }}>
               Personal Information
             </h3>
@@ -151,7 +147,7 @@ export default function Profile() {
           </div>
 
           {/* Change Password */}
-          <div className="backdrop-blur-lg bg-white/70 rounded-2xl shadow-lg border border-gray-200/50 p-8">
+          <div className="backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-gray-200/50 p-6 sm:p-12">
             <h3 className="text-lg mb-6" style={{ color: '#142361' }}>
               Security — Change Password
             </h3>

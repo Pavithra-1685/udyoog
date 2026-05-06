@@ -167,27 +167,26 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Action Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl" style={{ color: '#142361' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h2 className="text-2xl font-bold" style={{ color: '#142361' }}>
             Active Companies
           </h2>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:bg-gray-50"
-              style={{ borderColor: '#142361', color: '#142361' }}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white transition-all hover:bg-gray-50 text-[#142361] font-semibold"
             >
               <Filter className="w-5 h-5" />
               Filters
             </button>
             <button
               onClick={() => setShowCompanyForm(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-white transition-all hover:opacity-90"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white transition-all hover:opacity-90 shadow-md font-semibold"
               style={{ backgroundColor: '#e0653b' }}
             >
               <Plus className="w-5 h-5" />
-              Add Company
+              New Record
             </button>
           </div>
         </div>
@@ -199,16 +198,16 @@ export default function Dashboard() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mb-6 flex gap-4 overflow-hidden"
+              className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-hidden p-1"
             >
-              <div className="flex-1">
-                <label className="block text-sm mb-1" style={{ color: '#142361' }}>
-                  Stage
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-gray-400">
+                  Business Stage
                 </label>
                 <select
                   value={stageFilter}
                   onChange={(e) => setStageFilter(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-gray-50 font-medium"
                 >
                   <option value="all">All Stages</option>
                   <option value="initiation">Initiation</option>
@@ -219,14 +218,14 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              <div className="flex-1">
-                <label className="block text-sm mb-1" style={{ color: '#142361' }}>
-                  Priority
+              <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-gray-400">
+                  Priority Status
                 </label>
                 <select
                   value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-gray-50 font-medium"
                 >
                   <option value="all">All Priorities</option>
                   <option value="high">High</option>

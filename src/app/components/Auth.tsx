@@ -86,7 +86,7 @@ export default function Auth({ onLogin }: AuthProps) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="backdrop-blur-lg bg-white/70 rounded-2xl shadow-2xl border border-gray-200/50 p-8">
+        <div className="backdrop-blur-lg bg-white/70 rounded-3xl shadow-2xl border border-gray-200/50 p-6 sm:p-8">
           {/* University Branding */}
           <div className="text-center mb-8">
             <motion.img
