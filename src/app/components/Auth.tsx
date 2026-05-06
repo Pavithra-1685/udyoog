@@ -45,17 +45,22 @@ export default function Auth({ onLogin }: AuthProps) {
           email,
           password,
           options: {
-            data: { full_name: fullName }
+            data: { full_name: fullName },
+            emailRedirectTo: window.location.origin,
           }
         });
+        
         if (error) throw error;
         
         if (data.user && data.session) {
-          toast.success('Account created and signed in!');
+          toast.success('Takshishila account created and verified!');
           onLogin(email);
         } else {
-          toast.success('Account created! Please check your email to verify your account before logging in.');
           setMode('login');
+          toast.success('Registration successful!', {
+            description: 'Check your email for a verification link to activate your Takshishila account.',
+            duration: 10000,
+          });
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
