@@ -59,7 +59,7 @@ export default function Auth({ onLogin }: AuthProps) {
         if (error) throw error;
         
         if (data.user && data.session) {
-          toast.success('Takshishila account created and verified!');
+          toast.success('Takshashila account created and verified!');
           onLogin(email);
         } else {
           setMode('login');
