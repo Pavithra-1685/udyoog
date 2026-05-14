@@ -190,7 +190,7 @@ export default function Dashboard() {
               style={{ backgroundColor: '#e0653b' }}
             >
               <Plus className="w-5 h-5" />
-              New Record
+              New Company
             </button>
           </div>
         </div>

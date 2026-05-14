@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { supabase } from '../../lib/supabase';
+import { Toaster } from 'sonner';
 
 export default function Root() {
   const navigate = useNavigate();
@@ -48,5 +49,10 @@ export default function Root() {
     };
   }, [navigate, location.pathname]);
 
-  return <Outlet />;
+  return (
+    <>
+      <Toaster position="top-right" richColors />
+      <Outlet />
+    </>
+  );
 }
