@@ -38,7 +38,7 @@ export default function Navigation({ userEmail }: NavigationProps) {
           >
             <motion.img
               src={tuLogo}
-              alt="Takshishila University"
+              alt="Takshashila University"
               className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
               whileHover={{ rotate: 8, scale: 1.08 }}
               transition={{ type: 'spring', stiffness: 300 }}
@@ -48,7 +48,7 @@ export default function Navigation({ userEmail }: NavigationProps) {
                 className="text-lg sm:text-xl tracking-tight font-bold"
                 style={{ color: '#142361', margin: 0, lineHeight: 1.2 }}
               >
-                Takshishila
+                Takshashila
               </h1>
               <p
                 className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest"
