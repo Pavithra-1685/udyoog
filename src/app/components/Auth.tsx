@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
-import tuLogo from 'logo/tu.png';
+// Use public path for logo image
 
 interface AuthProps {
   onLogin: (email: string) => void;
@@ -112,7 +112,7 @@ export default function Auth({ onLogin }: AuthProps) {
           {/* University Branding */}
           <div className="text-center mb-8">
             <motion.img
-              src={tuLogo}
+              src="/logo/tu.png"
               alt="Takshashila University"
               className="w-20 h-20 mx-auto mb-4 object-contain"
               initial={{ scale: 0.8, opacity: 0 }}
