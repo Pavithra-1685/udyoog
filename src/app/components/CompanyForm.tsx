@@ -209,7 +209,7 @@ export default function CompanyForm({ company, onClose, onSubmit }: CompanyFormP
           {/* Positions */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm" style={{ color: '#142361' }}>
+               <label className="text-sm" style={{ color: '#142361' }}>
                 Open Positions
               </label>
               <button
@@ -271,7 +271,7 @@ export default function CompanyForm({ company, onClose, onSubmit }: CompanyFormP
               
               <div>
                 <label className="block text-sm mb-2" style={{ color: '#142361' }}>
-                  Activity Box
+                  Action Item
                 </label>
                 <textarea
                   value={activityText}
@@ -295,32 +295,10 @@ export default function CompanyForm({ company, onClose, onSubmit }: CompanyFormP
                     placeholder=""
                   />
                 </div>
-                <div>
-                  <label className="block text-sm mb-2" style={{ color: '#142361' }}>
-                    Action Item
-                  </label>
-                  <input
-                    type="text"
-                    value={actionItem}
-                    onChange={(e) => setActionItem(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white/50"
-                    placeholder=""
-                  />
-                </div>
+                
               </div>
 
-              <div>
-                <label className="block text-sm mb-2" style={{ color: '#142361' }}>
-                  Help Required
-                </label>
-                <textarea
-                  value={helpRequired}
-                  onChange={(e) => setHelpRequired(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white/50 resize-none"
-                  rows={2}
-                  placeholder=""
-                />
-              </div>
+             
             </div>
           )}
 

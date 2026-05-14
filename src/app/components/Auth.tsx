@@ -113,14 +113,14 @@ export default function Auth({ onLogin }: AuthProps) {
           <div className="text-center mb-8">
             <motion.img
               src={tuLogo}
-              alt="Takshishila University"
+              alt="Takshashila University"
               className="w-20 h-20 mx-auto mb-4 object-contain"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
             />
             <h1 className="text-2xl mb-1" style={{ color: '#142361' }}>
-              Takshishila University
+              Takshashila University
             </h1>
             <p
               className="text-xs font-semibold uppercase tracking-[0.2em] mb-3"
