@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Archive as ArchiveIcon, RotateCcw, Loader2 } from 'lucide-react';
-import Navigation from '../components/Navigation';
-import CompanyCard, { type Company } from '../components/CompanyCard';
-import { supabase } from '../../lib/supabase';
+import Navigation from '../../components/shared/Navigation';
+import CompanyCard, { type Company } from '../../components/admin/CompanyCard';
+import { supabase } from '../../../lib/supabase';
 import { toast, Toaster } from 'sonner';
 
 export default function Archive() {
@@ -49,7 +49,7 @@ export default function Archive() {
 
       if (error) throw error;
       
-      toast.success('Company restored to active pathway.');
+      toast.success('Company restored!');
       fetchArchivedCompanies();
     } catch (error: any) {
       toast.error('Restore failed: ' + error.message);
@@ -64,15 +64,15 @@ export default function Archive() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-6">
             <ArchiveIcon className="w-8 h-8" style={{ color: '#142361' }} />
-            <h1 className="text-3xl" style={{ color: '#142361' }}>
-              Archived Companies
+            <h1 className="text-3xl font-bold" style={{ color: '#142361' }}>
+              Archived Records
             </h1>
           </div>
 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 animate-spin text-[#e0653b] mb-4" />
-              <p className="text-gray-500">Retrieving archived records...</p>
+              <p className="text-gray-500 font-medium italic">Loading archive...</p>
             </div>
           ) : archivedCompanies.length === 0 ? (
             <div className="backdrop-blur-lg bg-white/70 rounded-2xl shadow-lg border border-gray-200/50 p-12 text-center">
@@ -81,7 +81,7 @@ export default function Archive() {
                 No Archived Records
               </h2>
               <p className="text-gray-600">
-                Companies marked as "Closure" will appear here for historical reference.
+                Closed records will appear here.
               </p>
             </div>
           ) : (
@@ -103,7 +103,7 @@ export default function Archive() {
                       style={{ backgroundColor: '#10b981' }}
                     >
                       <RotateCcw className="w-5 h-5" />
-                      Restore to Active Pathway
+                      Restore to Pathway
                     </button>
                   </div>
                 </div>

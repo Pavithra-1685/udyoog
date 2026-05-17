@@ -8,7 +8,6 @@ interface ActivityFormProps {
   onClose: () => void;
   onSubmit: (activity: {
     companyId: string;
-    date: string;
     activity_text: string;
     action_owner: string;
     help_required: string;
@@ -16,7 +15,6 @@ interface ActivityFormProps {
 }
 
 export default function ActivityForm({ companyId, companyName, onClose, onSubmit }: ActivityFormProps) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [activityText, setActivityText] = useState('');
   const [actionOwner, setActionOwner] = useState('');
   const [helpRequired, setHelpRequired] = useState('');
@@ -27,7 +25,6 @@ export default function ActivityForm({ companyId, companyName, onClose, onSubmit
 
     onSubmit({
       companyId,
-      date,
       activity_text: activityText,
       action_owner: actionOwner,
       help_required: helpRequired,
@@ -69,18 +66,14 @@ export default function ActivityForm({ companyId, companyName, onClose, onSubmit
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Date */}
+          {/* Date (Locked to Today) */}
           <div>
-            <label className="block text-sm mb-2" style={{ color: '#142361' }}>
-              Date
+            <label className="block text-sm font-bold mb-2" style={{ color: '#142361' }}>
+              Activity Date
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e0653b] bg-white/50"
-              required
-            />
+            <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 font-bold flex items-center gap-2">
+               {new Date().toLocaleDateString('en-CA')}
+            </div>
           </div>
 
           {/* Activity Text */}

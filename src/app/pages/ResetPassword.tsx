@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast, Toaster } from 'sonner';
-import tuLogo from 'logo/tu.png';
+const tuLogo = '/logo/tu.png';
 
 export default function ResetPassword() {
   const navigate = useNavigate();

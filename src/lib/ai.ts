@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { type Company, type Activity } from '../app/components/CompanyCard';
+import { type Company, type Activity } from '../app/components/admin/CompanyCard';
 
 const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
@@ -38,6 +38,7 @@ INPUT DATA:
 Company: ${companyData.company_name}
 Current Stage: ${companyData.stage}
 Priority Level: ${companyData.priority}
+Open Roles: ${JSON.stringify(companyData.positions || [])}
 Engagement History: ${JSON.stringify(activities)}
 `;
 

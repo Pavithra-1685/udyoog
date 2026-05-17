@@ -13,13 +13,13 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-import Navigation from '../components/Navigation';
-import ActivityForm from '../components/ActivityForm';
-import CompanyForm from '../components/CompanyForm';
-import { supabase } from '../../lib/supabase';
-import { generateProfessionalSummary } from '../../lib/ai';
+import Navigation from '../../components/shared/Navigation';
+import ActivityForm from '../../components/admin/ActivityForm';
+import CompanyForm from '../../components/admin/CompanyForm';
+import { supabase } from '../../../lib/supabase';
+import { generateProfessionalSummary } from '../../../lib/ai';
 import { toast, Toaster } from 'sonner';
-import type { Company } from '../components/CompanyCard';
+import type { Company } from '../../components/admin/CompanyCard';
 
 const priorityColors: Record<string, string> = {
   high: '#ef4444',
@@ -83,7 +83,7 @@ export default function CompanyDetail() {
       }]);
 
       if (error) throw error;
-      toast.success('Activity logged successfully.');
+      toast.success('Activity logged!');
       fetchCompanyData();
       setShowActivityForm(false);
     } catch (error: any) {
@@ -137,7 +137,7 @@ export default function CompanyDetail() {
         <Navigation userEmail={userEmail} />
         <div className="flex flex-col items-center justify-center py-32">
           <Loader2 className="w-12 h-12 animate-spin text-[#e0653b] mb-4" />
-          <p className="text-gray-500">Retrieving secure company records...</p>
+          <p className="text-gray-500 font-medium">Loading details...</p>
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function CompanyDetail() {
           className="flex items-center gap-2 mb-6 px-4 py-2 rounded-xl border border-gray-200 transition-all hover:bg-gray-50 text-[#142361] font-medium"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Dashboard
+          Back
         </button>
 
         <motion.div
@@ -221,7 +221,7 @@ export default function CompanyDetail() {
                   style={{ color: '#e0653b' }}
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Visit Corporate Site
+                  Website
                 </a>
               )}
             </div>
@@ -232,21 +232,21 @@ export default function CompanyDetail() {
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-gray-200 transition-all hover:bg-white bg-white/50 text-[#142361] font-semibold shadow-sm"
               >
                 <Edit className="w-5 h-5" />
-                Update Profile
+                Update
               </button>
               <button
                 onClick={handleArchive}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-semibold transition-all hover:bg-gray-200"
               >
                 <ArchiveIcon className="w-5 h-5" />
-                Archive File
+                Archive
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-4 border-t border-gray-100 pt-6">
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-bold text-gray-400">Priority Level:</span>
+              <span className="text-xs uppercase font-bold text-gray-400">Priority:</span>
               <span
                 className="px-4 py-1.5 rounded-full text-white text-xs font-bold uppercase tracking-widest shadow-sm"
                 style={{ backgroundColor: priorityColors[company.priority] }}
@@ -268,7 +268,7 @@ export default function CompanyDetail() {
               </div>
               {company.positions.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                  <p className="text-gray-500">No active positions recorded for this engagement.</p>
+                  <p className="text-gray-500">No active positions recorded.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
@@ -299,7 +299,7 @@ export default function CompanyDetail() {
               </div>
               {company.activities.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-                  <p className="text-gray-500">No history logs found in the archives.</p>
+                  <p className="text-gray-500">No history found.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -315,22 +315,6 @@ export default function CompanyDetail() {
                             <span>Recorded by: {activity.action_owner}</span>
                           </div>
                           <p className="text-gray-700 leading-relaxed mb-4">{activity.activity_text}</p>
-                          {(activity.action_item || activity.help_required) && (
-                            <div className="flex flex-wrap gap-4 p-3 bg-white rounded-xl border border-gray-100">
-                              {activity.action_item && (
-                                <div className="text-xs">
-                                  <span className="text-[#142361] font-black mr-2">ACTION:</span>
-                                  <span className="text-gray-600">{activity.action_item}</span>
-                                </div>
-                              )}
-                              {activity.help_required && (
-                                <div className="text-xs">
-                                  <span className="text-[#e0653b] font-black mr-2">CRITICAL HELP:</span>
-                                  <span className="text-gray-600">{activity.help_required}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -341,36 +325,18 @@ export default function CompanyDetail() {
 
           <aside className="space-y-8">
             <section className="bg-white rounded-3xl p-8 border border-gray-200/50 shadow-lg">
-              <h3 className="text-xl font-bold mb-6" style={{ color: '#142361' }}>Engagement Overview</h3>
+              <h3 className="text-xl font-bold mb-6" style={{ color: '#142361' }}>Overview</h3>
               <div className="space-y-4">
                 <div className="p-5 bg-gray-50 rounded-2xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Positions</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Positions</p>
                   <p className="text-4xl font-black" style={{ color: '#e0653b' }}>{company.positions.length}</p>
                 </div>
                 <div className="p-5 bg-gray-50 rounded-2xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Logs</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Logs</p>
                   <p className="text-4xl font-black" style={{ color: '#e0653b' }}>{company.activities.length}</p>
-                </div>
-                <div className="p-5 bg-gray-50 rounded-2xl">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Onboarded</p>
-                  <p className="text-lg font-bold" style={{ color: '#142361' }}>{new Date(company.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
             </section>
-
-            <div className="p-8 bg-[#142361] rounded-3xl text-white shadow-xl">
-              <Sparkles className="w-10 h-10 mb-4 text-[#e0653b]" />
-              <h4 className="text-xl font-bold mb-2">Need a summary?</h4>
-              <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-                Head back to the dashboard to generate a full AI strategic analysis for this company.
-              </p>
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="w-full py-3 bg-[#e0653b] rounded-xl font-bold hover:bg-[#c95a34] transition-colors"
-              >
-                Go to Dashboard
-              </button>
-            </div>
           </aside>
         </div>
       </div>

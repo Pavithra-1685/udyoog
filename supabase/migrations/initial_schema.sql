@@ -76,8 +76,12 @@ ALTER TABLE positions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 
 -- Policies: Profiles
-CREATE POLICY "Users can view their own profile" ON profiles
-  FOR SELECT USING (auth.uid() IS NOT NULL AND auth.uid() = user_id);
+CREATE POLICY "Role based profile access" ON profiles
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    OR 
+    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('admin', 'faculty')
+  );
 CREATE POLICY "Users can insert their own profile" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own profile" ON profiles

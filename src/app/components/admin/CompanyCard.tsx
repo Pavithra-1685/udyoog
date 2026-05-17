@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ExternalLink, Calendar, Users, Briefcase, ArrowRight, Sparkles, Loader2, X, FileText } from 'lucide-react';
-import { generateProfessionalSummary } from '../../lib/ai';
+import { ChevronDown, ExternalLink, Calendar, Users, Briefcase, ArrowRight, Sparkles, Loader2, X, FileText, MapPin, IndianRupee, Clock } from 'lucide-react';
+import { generateProfessionalSummary } from '../../../lib/ai';
 import { toast } from 'sonner';
 
 export interface Position {
   id: string;
   role: string;
   description: string;
+  status: 'open' | 'close' | 'hold';
+  location: string;
+  salary: string;
   created_at: string;
 }
 
@@ -31,6 +34,8 @@ export interface Company {
   primary_email: string;
   primary_phone?: string;
   company_website: string;
+  action_date?: string;
+  action_item?: string;
   positions: Position[];
   activities: Activity[];
   created_at: string;
@@ -56,6 +61,12 @@ const stageColors = {
   'closure': '#10b981',
 };
 
+const statusColors = {
+  'open': 'bg-green-100 text-green-700 border-green-200',
+  'close': 'bg-red-100 text-red-700 border-red-200',
+  'hold': 'bg-amber-100 text-amber-700 border-amber-200',
+};
+
 export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyCardProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -70,9 +81,9 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
       const summary = await generateProfessionalSummary(company, company.activities);
       setAiSummary(summary);
       setShowSummaryModal(true);
-      toast.success(`Analysis complete for ${company.company_name}`);
+      toast.success(`Analysis complete!`);
     } catch (error: any) {
-      toast.error(error.message || 'Analysis failed. Check API key.');
+      toast.error(error.message || 'Analysis failed.');
     } finally {
       setIsGenerating(false);
     }
@@ -86,12 +97,10 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
         animate={{ opacity: 1, y: 0 }}
         className="glass rounded-2xl overflow-hidden hover:shadow-[0_8px_32px_0_rgba(20,35,97,0.15)] transition-all duration-500"
       >
-        {/* Header - Always Visible */}
         <div
           className="p-6 cursor-pointer relative"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          {/* Quick AI Button */}
           <button
             onClick={handleGenerateSummary}
             disabled={isGenerating}
@@ -107,7 +116,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
 
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 pr-12">
-              <h2 className="text-2xl mb-1" style={{ color: '#142361' }}>
+              <h2 className="text-2xl font-bold mb-1" style={{ color: '#142361' }}>
                 {company.company_name}
               </h2>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
@@ -116,7 +125,6 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                   <span>{company.primary_contact_name}</span>
                 </div>
                 <span>{company.primary_email}</span>
-                {company.primary_phone && <span>{company.primary_phone}</span>}
               </div>
             </div>
 
@@ -133,7 +141,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
               className="px-3 py-1 rounded-full text-white text-sm capitalize font-medium shadow-sm"
               style={{ backgroundColor: priorityColors[company.priority] }}
             >
-              {company.priority} Priority
+              {company.priority}
             </span>
 
             <span
@@ -145,7 +153,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
 
             <span className="px-3 py-1 rounded-full bg-gray-100 text-sm flex items-center gap-1 font-medium text-gray-700">
               <Briefcase className="w-4 h-4" />
-              {company.positions.length} {company.positions.length === 1 ? 'Position' : 'Positions'}
+              {company.positions.length} Jobs
             </span>
 
             {company.company_website && (
@@ -164,7 +172,6 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
           </div>
         </div>
 
-        {/* Expanded Content */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -174,38 +181,65 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
               transition={{ duration: 0.3 }}
             >
               <div className="border-t border-gray-200/50 p-6 space-y-6 bg-gray-50/30">
-                {/* Positions */}
                 {company.positions.length > 0 && (
                   <div>
-                    <h3 className="text-xl mb-3 flex items-center gap-2" style={{ color: '#142361' }}>
-                      <Briefcase className="w-5 h-5" />
-                      Open Positions
+                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#142361' }}>
+                      <Briefcase className="w-5 h-5 text-[#e0653b]" />
+                      Job Openings
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {company.positions.map((position) => (
                         <div
                           key={position.id}
-                          className="p-4 bg-white rounded-xl border border-gray-200/50 shadow-sm"
+                          className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all group"
                         >
-                          <h4 className="font-semibold mb-1" style={{ color: '#e0653b' }}>
-                            {position.role}
-                          </h4>
-                          <p className="text-sm text-gray-600 line-clamp-2">{position.description}</p>
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="font-bold text-lg group-hover:text-[#e0653b] transition-colors" style={{ color: '#142361' }}>
+                              {position.role}
+                            </h4>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${statusColors[position.status || 'open']}`}>
+                              {position.status || 'open'}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-2 mb-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              <span>{position.location || 'Remote'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <IndianRupee className="w-4 h-4" />
+                              <span>{position.salary || 'N/A'}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-gray-600 line-clamp-2 italic">
+                            "{position.description}"
+                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Activities */}
+                {(company.action_item || company.action_date) && (
+                  <div className="p-4 bg-[#142361]/5 rounded-2xl border border-[#142361]/10">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-[#142361] mb-2 flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> Next Action
+                    </h4>
+                    <p className="text-[#142361] font-medium">{company.action_item || 'Pending'}</p>
+                    <p className="text-xs text-gray-500">{company.action_date ? new Date(company.action_date).toLocaleDateString() : 'TBD'}</p>
+                  </div>
+                )}
+
                 {company.activities.length > 0 && (
                   <div>
-                    <h3 className="text-xl mb-3 flex items-center gap-2" style={{ color: '#142361' }}>
+                    <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: '#142361' }}>
                       <Calendar className="w-5 h-5" />
-                      Engagement History
+                      Recent Logs
                     </h3>
                     <div className="space-y-3">
-                      {company.activities.slice(0, 3).map((activity) => (
+                      {company.activities.slice(0, 2).map((activity) => (
                         <div
                           key={activity.id}
                           className="p-4 bg-white rounded-xl border border-gray-200/50 shadow-sm"
@@ -219,12 +253,12 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                           <p className="text-sm text-gray-700">{activity.activity_text}</p>
                         </div>
                       ))}
-                      {company.activities.length > 3 && (
+                      {company.activities.length > 2 && (
                         <button 
                           onClick={() => navigate(`/company/${company.id}`)}
                           className="text-sm font-medium text-[#e0653b] hover:underline flex items-center gap-1"
                         >
-                          View all {company.activities.length} activities
+                          View history ({company.activities.length})
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -232,7 +266,6 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200/50">
                   <button
                     onClick={(e) => {
@@ -242,7 +275,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 shadow-md"
                     style={{ backgroundColor: '#142361' }}
                   >
-                    Manage Detailed File
+                    Deep Dive
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
@@ -253,7 +286,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                     className="px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 shadow-md"
                     style={{ backgroundColor: '#e0653b' }}
                   >
-                    Log Activity
+                    New Activity
                   </button>
                   <button
                     onClick={(e) => {
@@ -262,7 +295,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                     }}
                     className="px-5 py-2.5 rounded-xl border border-gray-300 transition-all hover:bg-white bg-white/50 text-gray-700 font-medium shadow-sm"
                   >
-                    Update Record
+                    Update
                   </button>
                 </div>
               </div>
@@ -271,7 +304,6 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
         </AnimatePresence>
       </motion.div>
 
-      {/* AI Summary Modal */}
       <AnimatePresence>
         {showSummaryModal && aiSummary && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -298,7 +330,7 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                       <h3 className="text-2xl font-bold" style={{ color: '#142361' }}>
                         AI Strategic Analysis
                       </h3>
-                      <p className="text-sm text-gray-500">{company.company_name} Engagement</p>
+                      <p className="text-sm text-gray-500">{company.company_name}</p>
                     </div>
                   </div>
                   <button
@@ -317,17 +349,13 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
-                  <p className="text-xs text-gray-400 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    Generated via Llama 3.3 Intelligence
-                  </p>
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
                   <button
                     onClick={() => setShowSummaryModal(false)}
                     className="px-6 py-2.5 rounded-xl text-white font-semibold transition-all hover:opacity-90"
                     style={{ backgroundColor: '#142361' }}
                   >
-                    Acknowledge Insights
+                    Close
                   </button>
                 </div>
               </div>
