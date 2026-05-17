@@ -239,10 +239,12 @@ export default function Auth({ onLogin }: AuthProps) {
                         setRole('student');
                       }
                     }}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all micro-btn ${mode === m ? 'active' : ''}`}
                     style={{
                       backgroundColor: mode === m ? '#e0653b' : 'transparent',
                       color: mode === m ? 'white' : '#6b7280',
+                      boxShadow: mode === m ? '0 6px 24px 0 rgba(224,101,59,0.10)' : 'none',
+                      transform: mode === m ? 'translateY(-2px) scale(1.04)' : 'none',
                     }}
                   >
                     {m === 'login' ? 'Sign In' : 'Sign Up'}
@@ -256,10 +258,12 @@ export default function Auth({ onLogin }: AuthProps) {
                     key={r}
                     type="button"
                     onClick={() => setRole(r)}
-                    className="flex-1 py-1.5 rounded-xl text-[10px] font-bold uppercase transition-all"
+                    className={`flex-1 py-1.5 rounded-xl text-[10px] font-bold uppercase transition-all micro-btn ${role === r ? 'active' : ''}`}
                     style={{
                       backgroundColor: role === r ? '#142361' : 'transparent',
                       color: role === r ? 'white' : '#9ca3af',
+                      boxShadow: role === r ? '0 6px 24px 0 rgba(20,35,97,0.10)' : 'none',
+                      transform: role === r ? 'translateY(-2px) scale(1.04)' : 'none',
                     }}
                   >
                     {r}

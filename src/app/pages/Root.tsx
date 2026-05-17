@@ -82,12 +82,14 @@ export default function Root() {
       if (event === 'SIGNED_OUT') {
         localStorage.removeItem('careerPathway_auth');
         window.location.href = '/';
-        return;
-      }
-
-      if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
-        // STEP 1: Immediately set from metadata (instant — no DB call)
-        const metaRole = session.user.user_metadata?.role || 'admin';
+        return (
+          <>
+            <div className="page-fade">
+              <Outlet />
+            </div>
+            <Toaster richColors position="top-center" />
+          </>
+        );
         localStorage.setItem('careerPathway_auth', JSON.stringify({
           email: session.user.email,
           role: metaRole,
