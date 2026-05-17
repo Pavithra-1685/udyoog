@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck } from 'lucide-react';
+import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
@@ -467,7 +467,7 @@ export default function TalentPool() {
               exit={{ opacity: 0, y: 100 }}
               className="fixed bottom-0 left-0 right-0 z-50 p-4 max-w-7xl mx-auto"
             >
-              <div className="backdrop-blur-xl bg-white/95 border-2 border-[#142361]/10 rounded-3xl shadow-2xl overflow-hidden max-h-[50vh] flex flex-col">
+              <div className="backdrop-blur-xl bg-white/95 border-2 border-[#142361]/10 rounded-3xl shadow-2xl overflow-hidden max-h-[75vh] flex flex-col">
                 
                 {/* Header */}
                 <div className="p-4 bg-[#142361] text-white flex items-center justify-between">
@@ -531,13 +531,41 @@ export default function TalentPool() {
 
                   {/* Right Side: Student Profile Details */}
                   <div className="space-y-4 pl-0 md:pl-4 pt-4 md:pt-0">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
-                      <User className="w-4.5 h-4.5 text-blue-500" />
-                      Candidate Talent Profile
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                        <User className="w-4.5 h-4.5 text-blue-500" />
+                        Candidate Talent Profile
+                      </div>
+                      
+                      {/* GitHub & LinkedIn Links */}
+                      <div className="flex items-center gap-2">
+                        {selectedStudent.github_url && (
+                          <a 
+                            href={selectedStudent.github_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all"
+                            title="GitHub Profile"
+                          >
+                            <Github className="w-4 h-4 text-black" />
+                          </a>
+                        )}
+                        {selectedStudent.linkedin_url && (
+                          <a 
+                            href={selectedStudent.linkedin_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-all"
+                            title="LinkedIn Profile"
+                          >
+                            <Linkedin className="w-4 h-4 text-[#0077b5]" />
+                          </a>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 text-[#142361] font-black rounded-xl flex items-center justify-center">
+                      <div className="w-10 h-10 bg-blue-100 text-[#142361] font-black rounded-xl flex items-center justify-center text-lg uppercase shadow-sm">
                         {selectedStudent.full_name?.charAt(0)}
                       </div>
                       <div>
@@ -548,23 +576,70 @@ export default function TalentPool() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedStudent.skills?.map((skill: any) => (
-                        <span key={typeof skill === 'string' ? skill : skill.name} className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 text-[10px] font-bold rounded-full uppercase">
-                          {typeof skill === 'string' ? skill : skill.name}
+                    {/* CGPA and Hometown Location */}
+                    <div className="grid grid-cols-3 gap-3 text-xs font-bold bg-blue-50/20 p-3 rounded-2xl border border-blue-100/30">
+                      <div>
+                        <span className="text-gray-400 text-[8px] uppercase tracking-wider block">CGPA</span>
+                        <span className="text-sm text-[#142361] font-black block mt-0.5">{selectedStudent.cgpa || '0.00'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Current Town</span>
+                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate">{selectedStudent.home_location || 'Not Specified'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Preferred</span>
+                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate">
+                          {Array.isArray(selectedStudent.preferred_locations) && selectedStudent.preferred_locations.length > 0 
+                            ? selectedStudent.preferred_locations.join(', ') 
+                            : 'Open/Remote'}
                         </span>
-                      ))}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-xs font-bold bg-blue-50/30 p-3 rounded-2xl border border-blue-100/50">
-                      <div>
-                        <span className="text-gray-400 text-[9px] uppercase tracking-wider block">Student CGPA</span>
-                        <span className="text-base text-[#142361] font-black">{selectedStudent.cgpa || '0.0'} CGPA</span>
+                    {/* Skills section */}
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Technical Skills</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedStudent.skills?.map((skill: any) => {
+                          const name = typeof skill === 'string' ? skill : skill.name;
+                          const level = typeof skill === 'object' ? skill.level : '';
+                          return (
+                            <span key={name} className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-bold rounded-full uppercase flex items-center gap-1 shadow-sm">
+                              {name} {level && <span className="opacity-50 text-[7px]">({level})</span>}
+                            </span>
+                          );
+                        })}
+                        {(!selectedStudent.skills || selectedStudent.skills.length === 0) && (
+                          <span className="text-[10px] text-gray-400 italic">No skills listed.</span>
+                        )}
                       </div>
-                      <div>
-                        <span className="text-gray-400 text-[9px] uppercase tracking-wider block">Home Town</span>
-                        <span className="text-xs text-[#142361] font-bold block truncate">{selectedStudent.home_location || 'Not Specified'}</span>
-                      </div>
+                    </div>
+
+                    {/* Recent project section */}
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Recent Project Experience</div>
+                      {selectedStudent.projects && selectedStudent.projects.length > 0 ? (
+                        (() => {
+                          const recentProj = selectedStudent.projects[selectedStudent.projects.length - 1];
+                          return (
+                            <div className="p-3 bg-gray-50/80 rounded-2xl border border-gray-100/50 space-y-1.5 shadow-sm">
+                              <h5 className="font-extrabold text-xs text-[#142361]">{recentProj.name}</h5>
+                              <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2">{recentProj.description}</p>
+                              {recentProj.tech && recentProj.tech.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {recentProj.tech.map((t: string) => (
+                                    <span key={t} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase rounded">
+                                      {t}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No project listings added yet.</p>
+                      )}
                     </div>
                   </div>
                 </div>
