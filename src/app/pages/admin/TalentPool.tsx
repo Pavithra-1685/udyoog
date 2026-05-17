@@ -576,19 +576,21 @@ export default function TalentPool() {
                       </div>
                     </div>
 
-                    {/* CGPA and Hometown Location */}
+                    {/* CGPA, Hometown and Preferred Location */}
                     <div className="grid grid-cols-3 gap-3 text-xs font-bold bg-blue-50/20 p-3 rounded-2xl border border-blue-100/30">
                       <div>
                         <span className="text-gray-400 text-[8px] uppercase tracking-wider block">CGPA</span>
                         <span className="text-sm text-[#142361] font-black block mt-0.5">{selectedStudent.cgpa || '0.00'}</span>
                       </div>
                       <div>
-                        <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Current Town</span>
-                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate">{selectedStudent.home_location || 'Not Specified'}</span>
+                        <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Hometown</span>
+                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate" title={selectedStudent.home_location || 'Not Specified'}>
+                          {selectedStudent.home_location || 'Not Specified'}
+                        </span>
                       </div>
                       <div>
                         <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Preferred</span>
-                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate">
+                        <span className="text-xs text-[#142361] font-bold block mt-0.5 truncate" title={Array.isArray(selectedStudent.preferred_locations) ? selectedStudent.preferred_locations.join(', ') : 'Open/Remote'}>
                           {Array.isArray(selectedStudent.preferred_locations) && selectedStudent.preferred_locations.length > 0 
                             ? selectedStudent.preferred_locations.join(', ') 
                             : 'Open/Remote'}
