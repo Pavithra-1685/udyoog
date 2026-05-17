@@ -58,10 +58,10 @@ export default function Root() {
           const allowed = ['/student-dashboard', '/profile', '/analytics', '/interview-prep'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/student-dashboard'); return; }
         } else if (parsed.role === 'faculty') {
-          const allowed = ['/faculty-dashboard', '/faculty-analytics', '/analytics', '/profile', '/faculty/', '/talent-pool'];
+          const allowed = ['/faculty-dashboard', '/faculty-analytics', '/analytics', '/profile', '/faculty/', '/talent-pool', '/jobs', '/mapped-candidates'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/faculty-dashboard'); return; }
         } else {
-          const allowed = ['/dashboard', '/analytics', '/archive', '/profile', '/company/', '/talent-pool', '/faculty/'];
+          const allowed = ['/dashboard', '/analytics', '/profile', '/company/', '/talent-pool', '/faculty/', '/jobs', '/mapped-candidates', '/users-management'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/dashboard'); return; }
         }
       } catch {

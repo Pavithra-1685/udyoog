@@ -27,14 +27,29 @@ export default function FacultyStudentDetail() {
         setUserRole(profile?.role || user.user_metadata?.role || 'faculty');
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', id)
-        .maybeSingle();
+      let studentData = null;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+
+      if (isUuid) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', id)
+          .maybeSingle();
+        studentData = data;
+      }
+
+      if (!studentData) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('registration_no', id)
+          .maybeSingle();
+        studentData = data;
+      }
       
-      if (data) {
-        setStudent(data);
+      if (studentData) {
+        setStudent(studentData);
       }
       setIsLoading(false);
     };

@@ -58,6 +58,63 @@ export default function StudentDashboard() {
 
   const completion = calculateCompletion();
 
+  const calculateGamification = () => {
+    if (!profile) return { xp: 0, level: 1, title: 'Novice Aspirant', progress: 0 };
+    
+    // 1. Profile completion points (max 300 XP)
+    const completionXp = completion * 3; 
+
+    // 2. CGPA performance points (max 300 XP)
+    const cgpaVal = parseFloat(profile.cgpa || '0');
+    const cgpaXp = Math.min((cgpaVal / 10) * 300, 300);
+
+    // 3. Hands-on projects points (max 200 XP)
+    const projectsCount = profile.projects?.length || 0;
+    const projectsXp = Math.min(projectsCount * 50, 200);
+
+    // 4. Skills competency points (max 200 XP)
+    const skillsCount = profile.skills?.length || 0;
+    const skillsXp = Math.min(skillsCount * 20, 200);
+
+    const totalXp = Math.round(completionXp + cgpaXp + projectsXp + skillsXp);
+    
+    let level = 1;
+    let title = 'Novice Aspirant';
+    let nextThreshold = 250;
+    let prevThreshold = 0;
+
+    if (totalXp >= 900) {
+      level = 5;
+      title = 'Takshashila Scholar';
+      nextThreshold = 1000;
+      prevThreshold = 900;
+    } else if (totalXp >= 750) {
+      level = 4;
+      title = 'Elite Vanguard';
+      nextThreshold = 900;
+      prevThreshold = 750;
+    } else if (totalXp >= 500) {
+      level = 3;
+      title = 'Professional Catalyst';
+      nextThreshold = 750;
+      prevThreshold = 500;
+    } else if (totalXp >= 250) {
+      level = 2;
+      title = 'Rising Talent';
+      nextThreshold = 500;
+      prevThreshold = 250;
+    }
+
+    const progress = Math.min(
+      Math.round(((totalXp - prevThreshold) / (nextThreshold - prevThreshold)) * 100),
+      100
+    );
+
+    return { xp: totalXp, level, title, progress };
+  };
+
+  const gamification = calculateGamification();
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -144,10 +201,21 @@ export default function StudentDashboard() {
                     ? "Your profile is fully optimized! You're ready for top-tier opportunities."
                     : "Your professional presence is evolving. Complete your details to unlock full potential."}
                 </p>
+
+                <div className="pt-4 border-t border-white/10 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Current Tier</span>
+                    <span className="text-[#e0653b] font-black uppercase tracking-wider text-[10px]">Tier {gamification.level}</span>
+                  </div>
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-base font-extrabold text-white">{gamification.title}</span>
+                    <span className="text-xs font-bold font-mono text-gray-300">{gamification.xp} / 1000 XP</span>
+                  </div>
+                </div>
                 
                 <button 
                   onClick={() => navigate('/profile')}
-                  className="flex items-center gap-2 text-[#e0653b] text-sm font-bold uppercase tracking-widest hover:gap-3 transition-all"
+                  className="flex items-center gap-2 text-[#e0653b] text-sm font-bold uppercase tracking-widest hover:gap-3 transition-all pt-2"
                 >
                   Boost Profile <ArrowRight className="w-4 h-4" />
                 </button>
@@ -190,15 +258,15 @@ export default function StudentDashboard() {
                 <h1 className="text-3xl font-bold" style={{ color: '#142361' }}>Student Dashboard</h1>
                 <p className="text-gray-500">Visualizing your professional trajectory.</p>
               </div>
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100">
-                <Award className="w-5 h-5 text-[#e0653b]" />
-                <span className="text-sm font-bold" style={{ color: '#142361' }}>Level {
-                  [
-                    completion === 100,
-                    (profile?.projects?.length || 0) >= 3,
-                    (parseFloat(profile?.cgpa || '0') >= 7.5)
-                  ].filter(Boolean).length
-                } Aspirant</span>
+              <div className="hidden sm:flex flex-col items-end gap-1 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-[#e0653b]" />
+                  <span className="text-xs font-black uppercase tracking-wider text-gray-400">Tier {gamification.level}</span>
+                  <span className="text-sm font-extrabold text-[#142361]">{gamification.title}</span>
+                </div>
+                <div className="text-[10px] text-gray-500 font-bold font-mono">
+                  {gamification.xp} / 1000 XP
+                </div>
               </div>
             </header>
 

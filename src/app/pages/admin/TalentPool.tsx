@@ -1,57 +1,227 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router';
-import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
 
 export default function TalentPool() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlJobId = searchParams.get('jobId');
+
   const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('faculty');
   const [searchQuery, setSearchQuery] = useState('');
   const [students, setStudents] = useState<any[]>([]);
   const [activeJobs, setActiveJobs] = useState<any[]>([]);
+  const [mappings, setMappings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserEmail(user.email || '');
-      
-      // Fetch students — use same query pattern as working Faculty dashboard
-      const [studentRes, jobRes] = await Promise.all([
+  // Selection states for comparison
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
+
+  // Active assignment selection state
+  const [activeCandidateToAssign, setActiveCandidateToAssign] = useState<any | null>(null);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [studentRes, jobRes, mappingRes] = await Promise.all([
         supabase.from('profiles')
           .select('*')
           .eq('role', 'student')
           .order('full_name'),
-        supabase.from('positions').select('*, companies(company_name)').eq('status', 'open')
+        supabase.from('positions').select('*, companies(company_name)').eq('status', 'open'),
+        supabase.from('mapped_candidates').select('*')
       ]);
 
-      if (studentRes.error) {
-        console.error('Talent pool fetch error:', studentRes.error);
-        toast.error(`Failed to load talent: ${studentRes.error.message}`);
-      }
+      if (studentRes.error) throw studentRes.error;
+      if (jobRes.error) throw jobRes.error;
+      if (mappingRes.error) throw mappingRes.error;
 
       setStudents(studentRes.data || []);
-      setActiveJobs(jobRes.data || []);
+      const activeJobsList = jobRes.data || [];
+      setActiveJobs(activeJobsList);
+      setMappings(mappingRes.data || []);
+
+      // If jobId is present in URL query, set it as selected job
+      if (urlJobId) {
+        const foundJob = activeJobsList.find(j => j.id === urlJobId);
+        if (foundJob) setSelectedJob(foundJob);
+      } else if (activeJobsList.length > 0) {
+        setSelectedJob(activeJobsList[0]);
+      }
+    } catch (err: any) {
+      console.error('Fetch error:', err.message);
+      toast.error('Failed to load talent pool details.');
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || '');
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        const currentRole = profile?.role || user.user_metadata?.role || 'faculty';
+        setUserRole(currentRole as any);
+
+        if (currentRole === 'student') {
+          navigate('/student-dashboard');
+          return;
+        }
+      } else {
+        navigate('/');
+        return;
+      }
+      await fetchData();
     };
     init();
-  }, []);
+  }, [navigate, urlJobId]);
 
   const calculateMatch = (student: any, job: any) => {
-    if (!student.skills || !job.role) return 0;
-    const studentSkills = student.skills.map((s: any) => (typeof s === 'string' ? s : s.name).toLowerCase());
-    const jobKeywords = [job.role, job.description].join(' ').toLowerCase();
+    if (!student || !job) return 0;
     
-    let matches = 0;
-    studentSkills.forEach((skill: string) => {
-      if (jobKeywords.includes(skill)) matches++;
-    });
+    let skillsScore = 0; // out of 50
+    let academicScore = 0; // out of 30
+    let branchScore = 0; // out of 20
 
-    const score = Math.min((matches / 3) * 100, 100); // 3 skills = 100% match
-    return Math.round(score);
+    // 1. SKILLS MATCH (50 points maximum)
+    const studentSkills = (student.skills || []).map((s: any) => {
+      const name = typeof s === 'string' ? s : (s.name || '');
+      const level = typeof s === 'string' ? 'Intermediate' : (s.level || 'Intermediate');
+      return { name: name.toLowerCase().trim(), level };
+    }).filter((s: any) => s.name);
+
+    if (studentSkills.length > 0) {
+      const jobText = [job.role, job.description || ''].join(' ').toLowerCase();
+      
+      let matches = 0;
+      studentSkills.forEach((skill: any) => {
+        if (jobText.includes(skill.name)) {
+          const multiplier = skill.level === 'Expert' ? 1.5 : skill.level === 'Intermediate' ? 1.0 : 0.6;
+          matches += multiplier;
+        }
+      });
+
+      if (matches > 0) {
+        skillsScore = Math.min((matches / Math.max(studentSkills.length * 0.4, 2)) * 50, 50);
+      }
+    }
+
+    // 2. CGPA ELIGIBILITY (30 points maximum)
+    const cgpaVal = parseFloat(student.cgpa || '0');
+    if (cgpaVal >= 9.0) {
+      academicScore = 30;
+    } else if (cgpaVal >= 8.0) {
+      academicScore = 26;
+    } else if (cgpaVal >= 7.0) {
+      academicScore = 20;
+    } else if (cgpaVal >= 6.0) {
+      academicScore = 14;
+    } else if (cgpaVal > 0) {
+      academicScore = 8;
+    }
+
+    // 3. DEPARTMENT / BRANCH SUITABILITY (20 points maximum)
+    const branch = (student.branch || '').toLowerCase();
+    const roleText = (job.role || '').toLowerCase();
+    const descText = (job.description || '').toLowerCase();
+
+    const isTechJob = roleText.includes('software') || roleText.includes('developer') || roleText.includes('web') || roleText.includes('frontend') || roleText.includes('backend') || roleText.includes('fullstack') || roleText.includes('coder') || roleText.includes('tech') || roleText.includes('it');
+    const isCoreTechBranch = branch.includes('computer') || branch.includes('cse') || branch.includes('information') || branch.includes('it') || branch.includes('software');
+
+    if (branch) {
+      if (descText.includes(branch) || roleText.includes(branch)) {
+        branchScore = 20;
+      } else if (isTechJob && isCoreTechBranch) {
+        branchScore = 18;
+      } else if (isTechJob && (branch.includes('electronics') || branch.includes('ece') || branch.includes('electrical') || branch.includes('eee'))) {
+        branchScore = 15;
+      } else {
+        branchScore = 12;
+      }
+    } else {
+      branchScore = 10;
+    }
+
+    const finalScore = Math.round(skillsScore + academicScore + branchScore);
+    return Math.min(Math.max(finalScore, 10), 100);
+  };
+
+  const handleMapCandidate = async (studentId: string, jobId: string) => {
+    try {
+      // Check if already mapped
+      const isAlreadyMapped = mappings.some(m => m.student_id === studentId && m.position_id === jobId);
+      if (isAlreadyMapped) {
+        toast.info('This candidate is already mapped to this job.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .insert([{
+          student_id: studentId,
+          position_id: jobId,
+          status: 'mapped'
+        }]);
+
+      if (error) throw error;
+      
+      toast.success('Candidate mapped successfully!');
+      
+      // Refresh mappings
+      const { data: updatedMappings } = await supabase.from('mapped_candidates').select('*');
+      if (updatedMappings) setMappings(updatedMappings);
+
+      setActiveCandidateToAssign(null);
+    } catch (err: any) {
+      toast.error('Failed to map candidate: ' + err.message);
+    }
+  };
+
+  const handleUnmapCandidate = async (studentId: string, jobId: string) => {
+    try {
+      const mapping = mappings.find(m => m.student_id === studentId && m.position_id === jobId);
+      if (!mapping) return;
+
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .delete()
+        .eq('id', mapping.id);
+
+      if (error) throw error;
+      toast.success('Candidate unmapped.');
+      
+      // Refresh mappings
+      setMappings(prev => prev.filter(m => m.id !== mapping.id));
+    } catch (err: any) {
+      toast.error('Operation failed: ' + err.message);
+    }
+  };
+
+  // Drag and Drop implementation
+  const handleDragStart = (e: React.DragEvent, studentId: string) => {
+    e.dataTransfer.setData('text/plain', studentId);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDrop = async (e: React.DragEvent, jobId: string) => {
+    e.preventDefault();
+    const studentId = e.dataTransfer.getData('text/plain');
+    if (studentId) {
+      await handleMapCandidate(studentId, jobId);
+    }
   };
 
   const filteredStudents = students.filter(s => {
@@ -59,7 +229,9 @@ export default function TalentPool() {
     const name = (s.full_name || '').toLowerCase();
     const regNo = (s.registration_no || '').toLowerCase();
     const branch = (s.branch || '').toLowerCase();
-    return name.includes(query) || regNo.includes(query) || branch.includes(query);
+    const skillList = (s.skills || []).map((sk: any) => (typeof sk === 'string' ? sk : sk.name).toLowerCase()).join(' ');
+    
+    return name.includes(query) || regNo.includes(query) || branch.includes(query) || skillList.includes(query);
   });
 
   return (
@@ -67,114 +239,374 @@ export default function TalentPool() {
       <Navigation userEmail={userEmail} />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-[#142361]">Smart Talent Pool</h1>
-          <p className="text-gray-500 font-medium">Matching students with active opportunities</p>
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-[#142361]">Smart Candidate Mapping</h1>
+            <p className="text-gray-500 font-medium">Drag-and-drop or select candidates to assign them to active roles</p>
+          </div>
+          <button
+            onClick={() => navigate('/mapped-candidates')}
+            className="self-start sm:self-auto px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-[#142361] font-bold shadow-sm hover:bg-gray-50 transition-all text-sm flex items-center gap-2"
+          >
+            <Layers className="w-4 h-4 text-[#e0653b]" />
+            Pipeline Placements
+          </button>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters & Search */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-[#142361] mb-4 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-[#e0653b]" />
-                Search Talent
-              </h3>
-              <div className="relative mb-4">
+        {/* Side-by-Side Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* LEFT COLUMN: Active Jobs (Drop Targets) - span 4 */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm sticky top-24">
+              <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
+                <h3 className="font-extrabold text-[#142361] text-lg flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-[#e0653b]" />
+                  Active Job Roles
+                </h3>
+                <span className="text-[10px] font-black uppercase text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                  {activeJobs.length} open
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-400 mb-4 italic leading-relaxed">
+                💡 Drag student cards into a job to map them, or select a job below to view side-by-side comparisons.
+              </p>
+
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                {activeJobs.map(job => {
+                  const isSelected = selectedJob?.id === job.id;
+                  const mappedCount = mappings.filter(m => m.position_id === job.id).length;
+
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={() => setSelectedJob(job)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleDrop(e, job.id)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
+                        isSelected 
+                          ? 'border-[#e0653b] bg-[#e0653b]/5 shadow-md shadow-[#e0653b]/5' 
+                          : 'border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-[9px] font-black uppercase text-[#e0653b] tracking-wider">
+                            {job.companies?.company_name}
+                          </span>
+                          {mappedCount > 0 && (
+                            <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 uppercase">
+                              {mappedCount} Mapped
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-sm text-[#142361] mt-1 truncate group-hover:text-[#e0653b] transition-colors">
+                          {job.role}
+                        </h4>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold mt-3 pt-2 border-t border-gray-100/50">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 shrink-0" /> {job.location || 'Remote'}
+                        </span>
+                        <span className="flex items-center gap-1 text-[#142361]">
+                          <IndianRupee className="w-3 h-3 shrink-0 text-[#e0653b]" /> {job.salary || 'Salary N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {activeJobs.length === 0 && (
+                  <div className="text-center py-10 text-gray-400 text-sm">
+                    No active job listings.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Talent Directory & Search (Drag Sources) - span 8 */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Search Bar */}
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="relative w-full sm:max-w-md">
                 <input
                   type="text"
-                  placeholder="Name, Reg No, or Branch..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#e0653b] outline-none text-sm transition-all"
+                  placeholder="Search student by name, skill, branch, or registration no..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#e0653b] outline-none text-sm transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
-              
-              <div className="space-y-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Openings</p>
-                {activeJobs.slice(0, 5).map(job => (
-                  <div key={job.id} className="p-3 rounded-lg bg-gray-50 text-xs border border-transparent hover:border-[#e0653b]/20 transition-all cursor-default">
-                    <div className="font-bold text-[#142361] truncate">{job.role}</div>
-                    <div className="text-gray-500 truncate">{job.companies?.company_name}</div>
-                  </div>
-                ))}
-              </div>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+                {filteredStudents.length} Students Listed
+              </span>
             </div>
-          </div>
 
-          {/* Results Area */}
-          <div className="lg:col-span-3 space-y-6">
-            {isLoading ? (
-              <div className="py-20 text-center text-gray-400">Syncing talent pool...</div>
-            ) : filteredStudents.length > 0 ? (
-              <div className="grid gap-4">
-                {filteredStudents.map((student) => {
-                  // Find best match among jobs
-                  const matches = activeJobs.map(j => ({ ...j, score: calculateMatch(student, j) }))
-                    .sort((a, b) => b.score - a.score);
-                  const bestMatch = matches[0];
+            {/* Students List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isLoading ? (
+                <div className="col-span-full py-20 text-center text-gray-400">Syncing student database...</div>
+              ) : filteredStudents.length > 0 ? (
+                filteredStudents.map((student) => {
+                  const matchScore = calculateMatch(student, selectedJob);
+                  const isAssignedToSelectedJob = mappings.some(m => m.student_id === student.user_id && m.position_id === selectedJob?.id);
 
                   return (
-                    <motion.div
-                      layout
+                    <div
+                      draggable="true"
+                      onDragStart={(e) => handleDragStart(e, student.user_id)}
                       key={student.user_id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6"
-                      onClick={() => navigate(`/faculty/student/${student.user_id}`)}
+                      className={`bg-white p-5 rounded-3xl border transition-all cursor-grab active:cursor-grabbing hover:shadow-lg flex flex-col justify-between ${
+                        isAssignedToSelectedJob 
+                          ? 'border-blue-200 bg-blue-50/20' 
+                          : selectedStudent?.user_id === student.user_id
+                            ? 'border-[#e0653b] shadow-md shadow-[#e0653b]/5'
+                            : 'border-gray-100 hover:border-gray-200'
+                      }`}
+                      onClick={() => setSelectedStudent(student)}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-2xl font-bold text-[#142361] border border-gray-100 shadow-inner group-hover:bg-[#142361] group-hover:text-white transition-all">
-                          {student.full_name?.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-lg text-[#142361] group-hover:text-[#e0653b] transition-colors">
-                            {student.full_name}
-                          </h4>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
-                              <GraduationCap className="w-3 h-3" /> {student.branch || 'General'}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
-                              <MapPin className="w-3 h-3" /> {student.home_location || 'Not Set'}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-[#142361] uppercase tracking-tighter">
-                              <Zap className="w-3 h-3 text-[#e0653b]" /> CGPA: {student.cgpa || '0.0'}
-                            </span>
+                      <div>
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-[#142361]/10 rounded-2xl flex items-center justify-center font-bold text-lg text-[#142361] shadow-inner">
+                              {student.full_name?.charAt(0)}
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-base text-[#142361] hover:text-[#e0653b] transition-all">
+                                {student.full_name}
+                              </h4>
+                              <p className="text-[10px] text-gray-400 font-mono mt-0.5">{student.registration_no}</p>
+                            </div>
                           </div>
+
+                          {selectedJob && (
+                            <div className="text-right">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase ${
+                                matchScore >= 80 
+                                  ? 'bg-green-50 text-green-600 border-green-200' 
+                                  : matchScore >= 50
+                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                    : 'bg-blue-50 text-blue-600 border-blue-200'
+                              }`}>
+                                {matchScore}% Match
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Skills badges */}
+                        <div className="flex flex-wrap gap-1.5 mt-4">
+                          {student.skills?.slice(0, 4).map((skill: any) => (
+                            <span key={typeof skill === 'string' ? skill : skill.name} className="px-2 py-0.5 bg-gray-50 text-gray-500 border border-gray-100 text-[9px] font-bold rounded uppercase">
+                              {typeof skill === 'string' ? skill : skill.name}
+                            </span>
+                          ))}
+                          {(!student.skills || student.skills.length === 0) && (
+                            <span className="text-[10px] text-gray-400 italic">No skills listed</span>
+                          )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-8">
-                        {bestMatch && bestMatch.score > 0 && (
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 justify-end mb-1">
-                              <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-black rounded-full border border-green-100 uppercase">
-                                {bestMatch.score}% Smart Match
-                              </div>
-                            </div>
-                            <div className="text-xs font-bold text-[#142361] truncate max-w-[150px]">
-                              {bestMatch.role}
-                            </div>
-                            <div className="text-[10px] text-gray-400 font-medium">
-                              @{bestMatch.companies?.company_name}
-                            </div>
-                          </div>
-                        )}
-                        <ChevronRight className="w-6 h-6 text-gray-200 group-hover:text-[#e0653b] transition-all" />
+                      {/* Info & Mapping Controls */}
+                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold mt-4 pt-3 border-t border-gray-50">
+                        <div className="flex gap-2">
+                          <span>GPA: <strong className="text-[#142361]">{student.cgpa || '0.0'}</strong></span>
+                          <span>•</span>
+                          <span className="truncate max-w-[80px]">{student.branch || 'General'}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isAssignedToSelectedJob ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnmapCandidate(student.user_id, selectedJob.id);
+                              }}
+                              className="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-extrabold uppercase tracking-tighter"
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (selectedJob) handleMapCandidate(student.user_id, selectedJob.id);
+                                else toast.info('Please select a job first.');
+                              }}
+                              disabled={!selectedJob}
+                              className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-extrabold uppercase tracking-tighter flex items-center gap-1"
+                            >
+                              <PlusCircle className="w-3 h-3" /> Map
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
-                })}
-              </div>
-            ) : (
-              <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200 text-gray-400 font-medium">
-                No matching talent found for your search.
-              </div>
-            )}
+                })
+              ) : (
+                <div className="col-span-full py-20 text-center text-gray-400 font-medium">
+                  No matching candidates listed in this department.
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* SIDE-BY-SIDE DRAP/MODAL DRAWER: COMPARISON SCREEN */}
+        <AnimatePresence>
+          {selectedJob && selectedStudent && (
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              className="fixed bottom-0 left-0 right-0 z-50 p-4 max-w-7xl mx-auto"
+            >
+              <div className="backdrop-blur-xl bg-white/95 border-2 border-[#142361]/10 rounded-3xl shadow-2xl overflow-hidden max-h-[50vh] flex flex-col">
+                
+                {/* Header */}
+                <div className="p-4 bg-[#142361] text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#e0653b]" />
+                    <span className="font-extrabold text-sm uppercase tracking-widest">Side-By-Side Smart Match Profile</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase text-[#e0653b]">Smart match compatibility score</span>
+                      <span className="bg-green-500 text-white font-black text-xs px-3 py-1 rounded-full">
+                        {calculateMatch(selectedStudent, selectedJob)}% Correct Match
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedStudent(null)}
+                      className="p-1 hover:bg-white/10 rounded-full transition-colors text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content - Side-by-Side columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 overflow-y-auto p-6 gap-6">
+                  
+                  {/* Left Side: Job opening info */}
+                  <div className="space-y-4 pr-0 md:pr-4">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                      <Briefcase className="w-4.5 h-4.5 text-[#e0653b]" />
+                      Job Opportunity details
+                    </div>
+
+                    <div>
+                      <span className="text-xs font-black text-[#e0653b] uppercase">
+                        {selectedJob.companies?.company_name}
+                      </span>
+                      <h4 className="text-2xl font-black text-[#142361]">{selectedJob.role}</h4>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs font-bold text-gray-500 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span>{selectedJob.location || 'Remote'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#142361]">
+                        <IndianRupee className="w-4 h-4 text-[#e0653b] shrink-0" />
+                        <span>{selectedJob.salary || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Requirements & Description</div>
+                      <p className="text-xs text-gray-600 italic leading-relaxed border-l-4 border-gray-100 pl-3">
+                        "{selectedJob.description || 'No detailed instructions listed.'}"
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Student Profile Details */}
+                  <div className="space-y-4 pl-0 md:pl-4 pt-4 md:pt-0">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                      <User className="w-4.5 h-4.5 text-blue-500" />
+                      Candidate Talent Profile
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 text-[#142361] font-black rounded-xl flex items-center justify-center">
+                        {selectedStudent.full_name?.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-extrabold text-[#142361]">{selectedStudent.full_name}</h4>
+                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                          {selectedStudent.registration_no} • {selectedStudent.branch || 'General'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedStudent.skills?.map((skill: any) => (
+                        <span key={typeof skill === 'string' ? skill : skill.name} className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 text-[10px] font-bold rounded-full uppercase">
+                          {typeof skill === 'string' ? skill : skill.name}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs font-bold bg-blue-50/30 p-3 rounded-2xl border border-blue-100/50">
+                      <div>
+                        <span className="text-gray-400 text-[9px] uppercase tracking-wider block">Student CGPA</span>
+                        <span className="text-base text-[#142361] font-black">{selectedStudent.cgpa || '0.0'} CGPA</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 text-[9px] uppercase tracking-wider block">Home Town</span>
+                        <span className="text-xs text-[#142361] font-bold block truncate">{selectedStudent.home_location || 'Not Specified'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer mapping controls */}
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                  <button
+                    onClick={() => navigate(`/faculty/student/${selectedStudent.user_id}`)}
+                    className="text-[#142361] font-extrabold text-xs hover:underline flex items-center gap-1.5"
+                  >
+                    View Complete Portfolio Portfolio <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <div className="flex gap-3">
+                    {mappings.some(m => m.student_id === selectedStudent.user_id && m.position_id === selectedJob.id) ? (
+                      <button
+                        onClick={() => handleUnmapCandidate(selectedStudent.user_id, selectedJob.id)}
+                        className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs shadow-md shadow-red-600/10 hover:bg-red-700 transition-all uppercase"
+                      >
+                        Unmap Candidate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleMapCandidate(selectedStudent.user_id, selectedJob.id)}
+                        className="px-6 py-2.5 bg-[#e0653b] text-white rounded-xl font-bold text-xs shadow-md shadow-[#e0653b]/10 hover:opacity-90 transition-all uppercase flex items-center gap-1.5"
+                      >
+                        <UserCheck className="w-4 h-4" /> Map Candidate to Job
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelectedStudent(null)}
+                      className="px-4 py-2.5 border-2 border-gray-200 text-gray-500 rounded-xl font-bold text-xs hover:bg-gray-100 transition-all"
+                    >
+                      Close Comparison
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </main>
       <Toaster position="top-right" />
     </div>

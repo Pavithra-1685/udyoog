@@ -64,9 +64,6 @@ export default function MilestoneRoadmap({ profile }: MilestoneRoadmapProps) {
           <Flag className="w-6 h-6 text-[#e0653b]" />
           Career Pathway Roadmap
         </h3>
-        <div className="px-4 py-1 bg-[#142361] text-white rounded-full text-xs font-bold uppercase tracking-widest">
-          Level {currentLevel} Achieved
-        </div>
       </div>
 
       <div className="relative">

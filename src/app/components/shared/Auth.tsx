@@ -60,6 +60,9 @@ export default function Auth({ onLogin }: AuthProps) {
       }
 
       if (mode === 'signup') {
+        if (role === 'admin') {
+          throw new Error('Admin registration is strictly prohibited.');
+        }
         if (!fullName.trim()) { toast.error('Name is required.'); return; }
         if (password.length < 6) { toast.error('Min. 6 chars for password.'); return; }
         if (role === 'student' && !regNo.trim()) { toast.error('Registration number is required.'); return; }
@@ -91,6 +94,15 @@ export default function Auth({ onLogin }: AuthProps) {
 
       let loginEmail = email.trim().toLowerCase();
 
+      // Enforce Admin hardcoded check
+      if (role === 'admin') {
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
+        if (loginEmail !== adminEmail || password !== adminPassword) {
+          throw new Error('Access denied. Invalid Admin credentials.');
+        }
+      }
+
       // If student or faculty and they provided a Reg No / Employee ID (regNo), try to resolve it.
       if (mode === 'login' && (role === 'student' || role === 'faculty') && regNo.trim()) {
         const { data: profileData } = await supabase
@@ -111,14 +123,64 @@ export default function Auth({ onLogin }: AuthProps) {
         throw new Error('Please enter your email or registration number/employee ID.');
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      });
+      let authResult;
+      try {
+        authResult = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password,
+        });
+      } catch (signInErr: any) {
+        if (role === 'admin') {
+          // Fall through to auto-signup check
+          authResult = { data: { user: null }, error: signInErr };
+        } else {
+          throw signInErr;
+        }
+      }
 
-      if (error) throw error;
+      // Special provision for hardcoded admin auto-registration if not present in database auth
+      if (authResult.error && role === 'admin') {
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
+        
+        if (loginEmail === adminEmail && password === adminPassword) {
+          toast.info('Initializing system admin account...');
+          const signUpRes = await supabase.auth.signUp({
+            email: loginEmail,
+            password,
+            options: {
+              data: {
+                full_name: 'System Admin',
+                role: 'admin',
+              }
+            }
+          });
+          
+          if (signUpRes.error) throw signUpRes.error;
+          
+          // Retry signing in
+          authResult = await supabase.auth.signInWithPassword({
+            email: loginEmail,
+            password,
+          });
+          
+          if (authResult.error) throw authResult.error;
+        } else {
+          throw authResult.error;
+        }
+      } else if (authResult.error) {
+        throw authResult.error;
+      }
+
+      const { data } = authResult;
 
       if (data.user) {
+        // Silent DB override to force 'admin' role for system administrator credentials
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
+        if (data.user.email?.trim().toLowerCase() === adminEmail) {
+          await supabase.from('profiles').update({ role: 'admin' }).eq('user_id', data.user.id);
+        }
+
         // Enforce role-based access control matching the database profile role
         const { data: profile } = await supabase
           .from('profiles')
@@ -171,7 +233,12 @@ export default function Auth({ onLogin }: AuthProps) {
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setMode(m)}
+                    onClick={() => {
+                      setMode(m);
+                      if (m === 'signup' && role === 'admin') {
+                        setRole('student');
+                      }
+                    }}
                     className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
                     style={{
                       backgroundColor: mode === m ? '#e0653b' : 'transparent',
@@ -184,7 +251,7 @@ export default function Auth({ onLogin }: AuthProps) {
               </div>
 
               <div className="flex gap-1 p-1 bg-gray-50 border border-gray-200 rounded-2xl">
-                {(['admin', 'faculty', 'student'] as const).map(r => (
+                {(mode === 'signup' ? (['faculty', 'student'] as const) : (['admin', 'faculty', 'student'] as const)).map(r => (
                   <button
                     key={r}
                     type="button"

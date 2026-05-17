@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, BarChart3, User, Archive, LogOut, Menu, X, Users, Search, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, BarChart3, User, LogOut, Menu, X, Users, Search, BrainCircuit, Briefcase, Layers } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 const tuLogo = '/logo/tu.png';
 
@@ -51,16 +51,20 @@ export default function Navigation({ userEmail }: NavigationProps) {
 
   const facultyNavItems = [
     { path: '/faculty-dashboard', icon: LayoutDashboard, label: 'Overview' },
-    { path: '/faculty-analytics', icon: Users, label: 'Students' },
+    { path: '/jobs', icon: Briefcase, label: 'Job Roles' },
+    { path: '/mapped-candidates', icon: Layers, label: 'Placements' },
     { path: '/talent-pool', icon: Search, label: 'Talent Pool' },
+    { path: '/faculty-analytics', icon: Users, label: 'Students' },
     { path: '/profile', icon: User, label: 'Account' },
   ];
 
   const adminNavItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Companies' },
-    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/jobs', icon: Briefcase, label: 'Job Roles' },
+    { path: '/mapped-candidates', icon: Layers, label: 'Placements' },
     { path: '/talent-pool', icon: Search, label: 'Talent Pool' },
-    { path: '/archive', icon: Archive, label: 'Archive' },
+    { path: '/users-management', icon: Users, label: 'Users' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/profile', icon: User, label: 'Settings' },
   ];
 
@@ -96,7 +100,7 @@ export default function Navigation({ userEmail }: NavigationProps) {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -104,22 +108,22 @@ export default function Navigation({ userEmail }: NavigationProps) {
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all font-bold text-xs lg:text-sm"
                   style={{
                     backgroundColor: isActive ? '#e0653b' : 'transparent',
                     color: isActive ? 'white' : '#142361',
                   }}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </button>
               );
             })}
             <button
               onClick={handleLogout}
-              className="p-2 hover:text-red-600 rounded-xl transition-all ml-4 text-gray-400"
+              className="p-2 hover:text-red-600 rounded-xl transition-all ml-2 text-gray-400"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
 
