@@ -22,31 +22,39 @@ const LEVEL_COLORS = {
 };
 
 export default function StudentAnalytics({ profile }: StudentAnalyticsProps) {
-  const skills = (profile?.skills as Skill[]) || [];
+  const skills = Array.isArray(profile?.skills) ? (profile.skills as Skill[]) : [];
   
   const skillDistribution = [
-    { name: 'Expert', value: skills.filter(s => s.level === 'Expert').length, color: LEVEL_COLORS.Expert },
-    { name: 'Intermediate', value: skills.filter(s => s.level === 'Intermediate').length, color: LEVEL_COLORS.Intermediate },
-    { name: 'Beginner', value: skills.filter(s => s.level === 'Beginner').length, color: LEVEL_COLORS.Beginner },
+    { name: 'Expert', value: skills.filter(s => s && typeof s === 'object' && s.level === 'Expert').length, color: LEVEL_COLORS.Expert },
+    { name: 'Intermediate', value: skills.filter(s => s && typeof s === 'object' && s.level === 'Intermediate').length, color: LEVEL_COLORS.Intermediate },
+    { name: 'Beginner', value: skills.filter(s => s && typeof s === 'object' && s.level === 'Beginner').length, color: LEVEL_COLORS.Beginner },
   ].filter(d => d.value > 0);
 
-  const radarData = skills.slice(0, 6).map(s => ({
-    subject: s.name,
-    A: s.level === 'Expert' ? 100 : s.level === 'Intermediate' ? 66 : 33,
-    fullMark: 100,
-  }));
+  const radarData = skills.slice(0, 6).map(s => {
+    const name = s && typeof s === 'object' ? s.name : typeof s === 'string' ? s : 'Skill';
+    const level = s && typeof s === 'object' ? s.level : '';
+    return {
+      subject: name || 'Skill',
+      A: level === 'Expert' ? 100 : level === 'Intermediate' ? 66 : 33,
+      fullMark: 100,
+    };
+  });
 
   // Calculate Readiness Score
   const fields = [
     profile?.full_name, profile?.phone, profile?.graduation, profile?.branch,
-    profile?.github_url, profile?.linkedin_url, (profile?.skills?.length || 0) > 0
+    profile?.github_url, profile?.linkedin_url, (Array.isArray(profile?.skills) ? profile.skills.length : 0) > 0
   ];
   const completionPercent = Math.round((fields.filter(Boolean).length / fields.length) * 100);
 
-  const cgpaData = [1, 2, 3, 4, 5, 6, 7, 8].map(sem => ({
-    name: `Sem ${sem}`,
-    cgpa: parseFloat(profile?.semester_cgpa?.[`sem${sem}`]) || null
-  })).filter(d => d.cgpa !== null);
+  const cgpaData = [1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
+    const rawVal = profile?.semester_cgpa?.[`sem${sem}`];
+    const val = parseFloat(rawVal);
+    return {
+      name: `Sem ${sem}`,
+      cgpa: !isNaN(val) && rawVal !== null && rawVal !== undefined && rawVal !== '' ? val : null
+    };
+  }).filter(d => d.cgpa !== null);
 
   return (
     <div className="space-y-8">

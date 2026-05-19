@@ -115,7 +115,7 @@ export default function FacultyStudentDetail() {
 
                 <div className="w-full space-y-4 pt-6 border-t border-gray-100">
                   <InfoRow icon={MapPin} label="Home" value={student.home_location || 'Not Specified'} />
-                  <InfoRow icon={Globe} label="Preferred" value={student.preferred_locations?.length > 0 ? student.preferred_locations.join(', ') : 'Any'} />
+                  <InfoRow icon={Globe} label="Preferred" value={Array.isArray(student.preferred_locations) && student.preferred_locations.length > 0 ? student.preferred_locations.join(', ') : 'Any'} />
                   <InfoRow icon={GraduationCap} label="Branch" value={student.branch || 'General'} />
                   <InfoRow icon={Calendar} label="Batch" value={student.batch || 'Not Set'} />
                   <InfoRow icon={TrendingUp} label="CGPA" value={student.cgpa || '0.0'} />
@@ -129,12 +129,12 @@ export default function FacultyStudentDetail() {
                 Primary Skills
               </h3>
               <div className="flex flex-wrap gap-2">
-                {student.skills?.map((skill: any) => (
+                {(Array.isArray(student.skills) ? student.skills : []).map((skill: any) => (
                   <span key={typeof skill === 'string' ? skill : skill.name} className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100 uppercase">
                     {typeof skill === 'string' ? skill : skill.name}
                   </span>
                 ))}
-                {(!student.skills || student.skills.length === 0) && (
+                {(!Array.isArray(student.skills) || student.skills.length === 0) && (
                   <p className="text-gray-400 text-sm">No skills listed</p>
                 )}
               </div>
@@ -156,12 +156,12 @@ export default function FacultyStudentDetail() {
                 Projects & Experience
               </h3>
               <div className="space-y-6">
-                {student.projects?.map((project: any, index: number) => (
+                {(Array.isArray(student.projects) ? student.projects : []).map((project: any, index: number) => (
                   <div key={index} className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                     <h4 className="font-bold text-[#142361] mb-2">{project.name}</h4>
                     <p className="text-gray-600 text-sm mb-4">{project.description}</p>
                     <div className="flex flex-wrap gap-2">
-                      {project.tech?.map((t: string) => (
+                      {Array.isArray(project.tech) && project.tech.map((t: string) => (
                         <span key={t} className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter bg-blue-50 px-2 py-0.5 rounded">
                           {t}
                         </span>
@@ -169,7 +169,7 @@ export default function FacultyStudentDetail() {
                     </div>
                   </div>
                 ))}
-                {(!student.projects || student.projects.length === 0) && (
+                {(!Array.isArray(student.projects) || student.projects.length === 0) && (
                   <div className="text-center py-8 bg-gray-50 rounded-2xl text-gray-400 italic">
                     No records found
                   </div>
