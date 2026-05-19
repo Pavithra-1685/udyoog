@@ -79,17 +79,13 @@ export default function Root() {
   // then sync role from DB in background without blocking navigation
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || !session) {
         localStorage.removeItem('careerPathway_auth');
-        window.location.href = '/';
-        return (
-          <>
-            <div className="page-fade">
-              <Outlet />
-            </div>
-            <Toaster richColors position="top-center" />
-          </>
-        );
+        if (window.location.pathname !== '/') {
+          window.location.href = '/';
+        }
+      } else if (session) {
+        const metaRole = session.user.user_metadata?.role || 'student';
         localStorage.setItem('careerPathway_auth', JSON.stringify({
           email: session.user.email,
           role: metaRole,
