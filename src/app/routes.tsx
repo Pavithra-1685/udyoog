@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
       // Shared routes (multiple roles)
       { path: 'analytics', element: <RoleGuard allowedRoles={['admin', 'student']}><Analytics /></RoleGuard> },
       { path: 'talent-pool', element: <RoleGuard allowedRoles={['admin', 'faculty']}><TalentPool /></RoleGuard> },
-      { path: 'jobs', element: <RoleGuard allowedRoles={['admin', 'faculty']}><Jobs /></RoleGuard> },
+      { path: 'jobs', element: <RoleGuard allowedRoles={['admin', 'faculty', 'student']}><Jobs /></RoleGuard> },
       { path: 'mapped-candidates', element: <RoleGuard allowedRoles={['admin', 'faculty']}><MappedCandidates /></RoleGuard> },
       { path: 'profile', Component: Profile },
       { path: 'reset-password', Component: ResetPassword },

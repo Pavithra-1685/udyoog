@@ -44,6 +44,7 @@ export default function Navigation({ userEmail }: NavigationProps) {
 
   const studentNavItems = [
     { path: '/student-dashboard', icon: LayoutDashboard, label: 'Overview' },
+    { path: '/jobs', icon: Briefcase, label: 'Opportunities' },
     { path: '/profile', icon: User, label: 'Portfolio' },
     { path: '/analytics', icon: BarChart3, label: 'Progress' },
     { path: '/interview-prep', icon: BrainCircuit, label: 'AI Coach' },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Briefcase, MapPin, IndianRupee, Search, Plus, Edit2, Trash2, UserPlus, FileText, ChevronRight, X } from 'lucide-react';
+import { Briefcase, MapPin, IndianRupee, Search, Plus, Edit2, Trash2, UserPlus, FileText, ChevronRight, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
@@ -10,6 +10,8 @@ export default function Jobs() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('faculty');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [studentMappings, setStudentMappings] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,11 +64,51 @@ export default function Jobs() {
     }
   };
 
+  const handleApplyJob = async (jobId: string) => {
+    if (!userId) return;
+    try {
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .insert([{
+          student_id: userId,
+          position_id: jobId,
+          status: 'applied',
+          mapped_by: userId,
+          mapped_by_role: 'student'
+        }]);
+
+      if (error) throw error;
+      toast.success('Successfully applied! Your profile has been shared with the recruiters.');
+      
+      // Confetti blast!
+      try {
+        const confetti = (await import('canvas-confetti')).default;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (confettiError) {
+        console.error('Confetti animation failed to load:', confettiError);
+      }
+
+      // Refresh student mappings
+      const { data: maps } = await supabase
+        .from('mapped_candidates')
+        .select('*')
+        .eq('student_id', userId);
+      setStudentMappings(maps || []);
+    } catch (err: any) {
+      toast.error('Failed to submit application: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || '');
+        setUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -77,8 +119,12 @@ export default function Jobs() {
         setUserRole(currentRole as any);
 
         if (currentRole === 'student') {
-          navigate('/student-dashboard');
-          return;
+          // Fetch student's existing mappings
+          const { data: maps } = await supabase
+            .from('mapped_candidates')
+            .select('*')
+            .eq('student_id', user.id);
+          setStudentMappings(maps || []);
         }
       } else {
         navigate('/');
@@ -212,8 +258,14 @@ export default function Jobs() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-[#142361]">Corporate Job Roles</h1>
-            <p className="text-gray-500 font-medium">Manage and track active employment opportunities</p>
+            <h1 className="text-3xl font-black text-[#142361]">
+              {userRole === 'student' ? 'Career Pathway Center' : 'Corporate Job Roles'}
+            </h1>
+            <p className="text-gray-500 font-medium">
+              {userRole === 'student'
+                ? 'Browse corporate job roles and apply for active employment opportunities'
+                : 'Manage and track active employment opportunities'}
+            </p>
           </div>
           {userRole === 'admin' && (
             <button
@@ -226,6 +278,22 @@ export default function Jobs() {
             </button>
           )}
         </header>
+
+        {/* Application Instructions Alert for Students */}
+        {userRole === 'student' && (
+          <div className="bg-gradient-to-r from-[#142361]/5 to-[#e0653b]/5 border-2 border-dashed border-[#e0653b]/30 p-6 rounded-3xl mb-8 flex items-start gap-4 shadow-sm backdrop-blur-sm">
+            <AlertCircle className="w-6 h-6 text-[#e0653b] shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-extrabold text-[#142361] text-sm md:text-base uppercase tracking-wider mb-1">Official Application Instructions</h4>
+              <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
+                If you would like to apply, please send your resume with the <strong className="text-[#142361]">job title and location</strong> as the subject line to <a href="mailto:shree.pop@takshashilauniv.ac.in" className="text-[#e0653b] font-bold hover:underline">shree.pop@takshashilauniv.ac.in</a>.
+              </p>
+              <p className="text-[11px] text-gray-400 mt-2 font-medium">
+                💡 You can also map your talent profile directly to the opportunities below by clicking the <strong className="text-[#e0653b]">Apply Now</strong> button.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Filter and Search Bar */}
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -307,40 +375,65 @@ export default function Jobs() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3 mt-auto">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/talent-pool?jobId=${job.id}`)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 font-bold text-xs hover:bg-blue-100 transition-all"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" />
-                      Map Talent
-                    </button>
-                    <button
-                      onClick={() => navigate(`/mapped-candidates?jobId=${job.id}`)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 font-bold text-xs hover:bg-purple-100 transition-all"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      Track Pipeline
-                    </button>
-                  </div>
+                  {userRole === 'student' ? (
+                    (() => {
+                      const mapping = studentMappings.find(m => m.position_id === job.id);
+                      if (mapping) {
+                        return (
+                          <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 font-bold text-xs rounded-xl uppercase">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{mapping.status === 'applied' ? 'Applied (Profile Mapped)' : `Pipeline Status: ${mapping.status}`}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <button
+                          onClick={() => handleApplyJob(job.id)}
+                          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-white font-extrabold text-xs shadow-md shadow-[#e0653b]/10 hover:opacity-90 transition-all uppercase tracking-widest cursor-pointer"
+                          style={{ backgroundColor: '#e0653b' }}
+                        >
+                          Apply Now
+                        </button>
+                      );
+                    })()
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/talent-pool?jobId=${job.id}`)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 font-bold text-xs hover:bg-blue-100 transition-all"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          Map Talent
+                        </button>
+                        <button
+                          onClick={() => navigate(`/mapped-candidates?jobId=${job.id}`)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 font-bold text-xs hover:bg-purple-100 transition-all"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Track Pipeline
+                        </button>
+                      </div>
 
-                  {userRole === 'admin' && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => openEditModal(job)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Edit Job"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteJob(job.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        title="Delete Job"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                      {userRole === 'admin' && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(job)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Edit Job"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="Delete Job"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </motion.div>

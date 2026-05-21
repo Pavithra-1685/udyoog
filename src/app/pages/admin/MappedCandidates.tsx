@@ -13,6 +13,7 @@ export default function MappedCandidates() {
 
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('faculty');
+  const [userId, setUserId] = useState<string | null>(null);
   const [mappings, setMappings] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -54,6 +55,7 @@ export default function MappedCandidates() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || '');
+        setUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -241,6 +243,7 @@ export default function MappedCandidates() {
                     <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider">Candidate</th>
                     <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider">Assigned Role</th>
                     <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider">CGPA / Branch</th>
+                    <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider">Mapping Source</th>
                     <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider">Pipeline Stage</th>
                     <th className="p-5 text-xs font-black uppercase text-gray-400 tracking-wider text-right">Actions</th>
                   </tr>
@@ -277,6 +280,28 @@ export default function MappedCandidates() {
                       </td>
 
                       <td className="p-5">
+                        {(() => {
+                          const source = item.mapped_by_role || 'admin';
+                          let colorClass = 'bg-blue-50 text-blue-600 border-blue-200';
+                          let displayLabel = 'Admin';
+                          
+                          if (source === 'faculty') {
+                            colorClass = 'bg-amber-50 text-amber-600 border-amber-200';
+                            displayLabel = 'Faculty';
+                          } else if (source === 'student') {
+                            colorClass = 'bg-purple-50 text-purple-600 border-purple-200';
+                            displayLabel = 'Applied (Self)';
+                          }
+                          
+                          return (
+                            <span className={`px-2.5 py-1 text-[10px] font-black uppercase border rounded-full ${colorClass}`}>
+                              {displayLabel}
+                            </span>
+                          );
+                        })()}
+                      </td>
+
+                      <td className="p-5">
                         <div className="flex items-center gap-2">
                           <select
                             value={item.status}
@@ -302,13 +327,23 @@ export default function MappedCandidates() {
                           >
                             <ArrowUpRight className="w-4.5 h-4.5" />
                           </button>
-                          <button
-                            onClick={() => handleUnmap(item.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Remove Mapping"
-                          >
-                            <Trash2 className="w-4.5 h-4.5" />
-                          </button>
+                          {(userRole === 'admin' || (userRole === 'faculty' && item.mapped_by_role === 'faculty' && item.mapped_by === userId)) ? (
+                            <button
+                              onClick={() => handleUnmap(item.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              title="Remove Mapping"
+                            >
+                              <Trash2 className="w-4.5 h-4.5" />
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="p-2 text-gray-200 cursor-not-allowed"
+                              title="Only Admin or the mapping Faculty can unmap this candidate"
+                            >
+                              <Trash2 className="w-4.5 h-4.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -5,7 +5,8 @@ import Navigation from '../../components/shared/Navigation';
 import StudentAnalytics from '../../components/student/StudentAnalytics';
 import MilestoneRoadmap from '../../components/student/MilestoneRoadmap';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, BrainCircuit, LayoutDashboard, UserCircle, Settings, ArrowRight, Sparkles, TrendingUp, Award, Briefcase, MapPin, IndianRupee } from 'lucide-react';
+import { Loader2, BrainCircuit, LayoutDashboard, UserCircle, Settings, ArrowRight, Sparkles, TrendingUp, Award, Briefcase, MapPin, IndianRupee, CheckCircle2 } from 'lucide-react';
+import { toast, Toaster } from 'sonner';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -13,6 +14,46 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeJobs, setActiveJobs] = useState<any[]>([]);
+  const [studentMappings, setStudentMappings] = useState<any[]>([]);
+
+  const handleApplyJob = async (jobId: string) => {
+    if (!profile?.user_id) return;
+    try {
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .insert([{
+          student_id: profile.user_id,
+          position_id: jobId,
+          status: 'applied',
+          mapped_by: profile.user_id,
+          mapped_by_role: 'student'
+        }]);
+
+      if (error) throw error;
+      toast.success('Successfully applied! Your profile has been shared with recruiters.');
+      
+      // Confetti blast!
+      try {
+        const confetti = (await import('canvas-confetti')).default;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (confettiError) {
+        console.error('Confetti animation failed to load:', confettiError);
+      }
+
+      // Refresh student mappings
+      const { data: maps } = await supabase
+        .from('mapped_candidates')
+        .select('*')
+        .eq('student_id', profile.user_id);
+      setStudentMappings(maps || []);
+    } catch (err: any) {
+      toast.error('Failed to submit application: ' + err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -21,9 +62,10 @@ export default function StudentDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserEmail(user.email || '');
-          const [profileRes, jobsRes] = await Promise.all([
+          const [profileRes, jobsRes, mappingsRes] = await Promise.all([
             supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
-            supabase.from('positions').select('*, companies(company_name)').eq('status', 'open').limit(3)
+            supabase.from('positions').select('*, companies(company_name)').eq('status', 'open').limit(3),
+            supabase.from('mapped_candidates').select('*').eq('student_id', user.id)
           ]);
           
           if (profileRes.data) {
@@ -33,6 +75,7 @@ export default function StudentDashboard() {
             }
           }
           setActiveJobs(jobsRes.data || []);
+          setStudentMappings(mappingsRes.data || []);
         } else {
           navigate('/');
         }
@@ -233,18 +276,49 @@ export default function StudentDashboard() {
                 Live Opportunities
               </h3>
               <div className="space-y-4">
-                {activeJobs.length > 0 ? activeJobs.map((job) => (
-                  <div key={job.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#142361]/10 transition-all cursor-default group">
-                    <div className="text-xs font-bold text-[#e0653b] mb-1">{job.companies?.company_name}</div>
-                    <div className="font-bold text-[#142361] group-hover:text-[#1d3080]">{job.role}</div>
-                    <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-2">
-                      <MapPin className="w-3 h-3" /> {job.location || 'Remote'}
-                      <span>•</span>
-                      <IndianRupee className="w-3 h-3" /> {job.salary || 'Competitive'}
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-4 text-gray-400 text-sm">
+                {activeJobs.length > 0 ? (
+                  <>
+                    {activeJobs.map((job) => {
+                      const mapping = studentMappings.find(m => m.position_id === job.id);
+                      return (
+                        <div key={job.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#142361]/10 transition-all cursor-default group flex flex-col justify-between">
+                          <div>
+                            <div className="text-xs font-bold text-[#e0653b] mb-0.5">{job.companies?.company_name}</div>
+                            <div className="font-bold text-[#142361] group-hover:text-[#1d3080] text-sm">{job.role}</div>
+                            <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-2">
+                              <MapPin className="w-3 h-3 text-gray-400" /> {job.location || 'Remote'}
+                              <span>•</span>
+                              <IndianRupee className="w-3 h-3 text-gray-400" /> {job.salary || 'Competitive'}
+                            </div>
+                          </div>
+
+                          {mapping ? (
+                            <div className="mt-3 flex items-center gap-1.5 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl font-extrabold text-[9px] uppercase tracking-wider w-fit">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{mapping.status === 'applied' ? 'Applied' : `Status: ${mapping.status}`}</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleApplyJob(job.id)}
+                              className="mt-3 w-full py-2 bg-[#e0653b] text-white rounded-xl font-extrabold text-[9px] uppercase tracking-widest hover:opacity-95 transition-all shadow-sm shadow-[#e0653b]/10 cursor-pointer text-center"
+                            >
+                              Quick Apply
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => navigate('/jobs')}
+                      className="mt-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-[#142361] border border-gray-100 hover:border-gray-200 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>View All Opportunities</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 text-sm border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
                     No active jobs matching your profile yet.
                   </div>
                 )}
@@ -280,6 +354,7 @@ export default function StudentDashboard() {
 
         </div>
       </main>
+      <Toaster position="top-right" />
     </div>
   );
 }

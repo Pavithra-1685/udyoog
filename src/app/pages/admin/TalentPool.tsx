@@ -13,6 +13,7 @@ export default function TalentPool() {
 
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('faculty');
+  const [userId, setUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [students, setStudents] = useState<any[]>([]);
   const [activeJobs, setActiveJobs] = useState<any[]>([]);
@@ -67,6 +68,7 @@ export default function TalentPool() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || '');
+        setUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -173,7 +175,9 @@ export default function TalentPool() {
         .insert([{
           student_id: studentId,
           position_id: jobId,
-          status: 'mapped'
+          status: 'mapped',
+          mapped_by: userId,
+          mapped_by_role: userRole
         }]);
 
       if (error) throw error;

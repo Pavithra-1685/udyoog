@@ -1,24 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, User, Mail, GraduationCap, Award, BookOpen, BarChart3, MapPin, Globe, Linkedin, Github, Calendar, TrendingUp } from 'lucide-react';
+import { ArrowLeft, User, Mail, GraduationCap, Award, BookOpen, BarChart3, MapPin, Globe, Linkedin, Github, Calendar, TrendingUp, Briefcase } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import StudentAnalytics from '../../components/student/StudentAnalytics';
+import { toast, Toaster } from 'sonner';
 
 export default function FacultyStudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [student, setStudent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [positions, setPositions] = useState<any[]>([]);
+  const [mappings, setMappings] = useState<any[]>([]);
+  const [isMappingLoading, setIsMappingLoading] = useState(false);
 
   useEffect(() => {
     const fetchStudent = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || '');
+        setUserId(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -50,11 +56,73 @@ export default function FacultyStudentDetail() {
       
       if (studentData) {
         setStudent(studentData);
+        
+        // Fetch positions and student's mappings
+        const [positionsRes, mappingsRes] = await Promise.all([
+          supabase.from('positions').select('*, companies(company_name)').eq('status', 'open'),
+          supabase.from('mapped_candidates').select('*').eq('student_id', studentData.user_id)
+        ]);
+        setPositions(positionsRes.data || []);
+        setMappings(mappingsRes.data || []);
       }
       setIsLoading(false);
     };
     fetchStudent();
   }, [id]);
+
+  const handleMap = async (positionId: string) => {
+    if (!student || !userId) return;
+    setIsMappingLoading(true);
+    try {
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .insert([{
+          student_id: student.user_id,
+          position_id: positionId,
+          status: 'mapped',
+          mapped_by: userId,
+          mapped_by_role: userRole
+        }]);
+
+      if (error) throw error;
+      toast.success('Successfully mapped candidate to job!');
+      
+      // Refresh mappings
+      const { data } = await supabase
+        .from('mapped_candidates')
+        .select('*')
+        .eq('student_id', student.user_id);
+      setMappings(data || []);
+    } catch (err: any) {
+      toast.error('Failed to map: ' + err.message);
+    } finally {
+      setIsMappingLoading(false);
+    }
+  };
+
+  const handleUnmap = async (mappingId: string) => {
+    setIsMappingLoading(true);
+    try {
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .delete()
+        .eq('id', mappingId);
+
+      if (error) throw error;
+      toast.success('Successfully unmapped candidate!');
+      
+      // Refresh mappings
+      const { data } = await supabase
+        .from('mapped_candidates')
+        .select('*')
+        .eq('student_id', student.user_id);
+      setMappings(data || []);
+    } catch (err: any) {
+      toast.error('Failed to unmap: ' + err.message);
+    } finally {
+      setIsMappingLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -139,6 +207,66 @@ export default function FacultyStudentDetail() {
                 )}
               </div>
             </section>
+
+            <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+              <h3 className="font-bold text-[#142361] mb-4 flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-[#e0653b]" />
+                Job Placement Mapping
+              </h3>
+              
+              {positions.length > 0 ? (
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                  {positions.map((job) => {
+                    const mapping = mappings.find(m => m.position_id === job.id);
+                    const canUnmap = userRole === 'admin' || 
+                      (userRole === 'faculty' && mapping?.mapped_by_role === 'faculty' && mapping?.mapped_by === userId);
+                    
+                    return (
+                      <div key={job.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-between gap-3">
+                        <div>
+                          <span className="text-[9px] font-black uppercase text-[#e0653b] tracking-wider">
+                            {job.companies?.company_name}
+                          </span>
+                          <h4 className="font-bold text-sm text-[#142361] mt-0.5">{job.role}</h4>
+                          <p className="text-[10px] text-gray-500 mt-1">{job.location || 'Remote'} • {job.salary || 'Competitive'}</p>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-gray-200/50 flex items-center justify-between gap-2">
+                          {mapping ? (
+                            <>
+                              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full">
+                                {mapping.status}
+                              </span>
+                              {canUnmap ? (
+                                <button
+                                  onClick={() => handleUnmap(mapping.id)}
+                                  disabled={isMappingLoading}
+                                  className="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 font-extrabold text-[9px] uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                                >
+                                  Unmap
+                                </button>
+                              ) : (
+                                <span className="text-[8px] text-gray-400 font-medium">Mapped by {mapping.mapped_by_role || 'Admin'}</span>
+                              )}
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleMap(job.id)}
+                              disabled={isMappingLoading}
+                              className="w-full py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-extrabold text-[9px] uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center"
+                            >
+                              Map Candidate
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No active opportunities listed.</p>
+              )}
+            </section>
           </div>
 
           <div className="lg:col-span-2 space-y-8">
@@ -179,6 +307,7 @@ export default function FacultyStudentDetail() {
           </div>
         </div>
       </main>
+      <Toaster position="top-right" />
     </div>
   );
 }
