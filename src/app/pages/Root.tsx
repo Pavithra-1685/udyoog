@@ -55,7 +55,7 @@ export default function Root() {
       try {
         const parsed = JSON.parse(savedAuth);
         if (parsed.role === 'student') {
-          const allowed = ['/student-dashboard', '/profile', '/analytics', '/interview-prep'];
+          const allowed = ['/student-dashboard', '/profile', '/analytics', '/interview-prep', '/jobs'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/student-dashboard'); return; }
         } else if (parsed.role === 'faculty') {
           const allowed = ['/faculty-dashboard', '/faculty-analytics', '/analytics', '/profile', '/faculty/', '/talent-pool', '/jobs', '/mapped-candidates'];
