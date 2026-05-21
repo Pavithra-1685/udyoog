@@ -345,33 +345,51 @@ export default function Jobs() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-gray-200 transition-all flex flex-col justify-between"
               >
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="bg-[#e0653b]/10 px-3 py-1.5 rounded-lg border border-[#e0653b]/20">
                       <span className="text-[10px] font-black uppercase text-[#e0653b] tracking-wider">
                         {job.companies?.company_name || 'Direct Recruitment'}
                       </span>
-                      <h3 className="font-extrabold text-xl text-[#142361] mt-1">{job.role}</h3>
                     </div>
-                    <span className={`text-[10px] px-2.5 py-1 border font-black uppercase rounded-full ${getStatusBadge(job.status)}`}>
+                    <span className={`text-[10px] px-3 py-1.5 border font-black uppercase rounded-full shadow-sm ${getStatusBadge(job.status)}`}>
                       {job.status}
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap gap-4 text-xs font-semibold text-gray-500 mb-4 bg-gray-50 p-3 rounded-2xl">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span>{job.location || 'Remote'}</span>
+                  <div className="space-y-5 mb-6 flex-1">
+                    <div>
+                      <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Role Title</h4>
+                      <h3 className="font-extrabold text-2xl text-[#142361]">{job.role}</h3>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <IndianRupee className="w-4 h-4 text-gray-400" />
-                      <span>{job.salary || 'Competitive Stipend'}</span>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <MapPin className="w-4 h-4" />
+                          <span className="text-[10px] uppercase font-bold tracking-widest">Location</span>
+                        </div>
+                        <div className="font-bold text-[#142361] text-sm pl-5">{job.location || 'Remote'}</div>
+                      </div>
+
+                      <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <IndianRupee className="w-4 h-4" />
+                          <span className="text-[10px] uppercase font-bold tracking-widest">Salary / Package</span>
+                        </div>
+                        <div className="font-bold text-[#142361] text-sm pl-5">{job.salary || 'Competitive'}</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100/50">
+                      <h4 className="text-[10px] font-bold text-[#142361]/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4" /> Job Description
+                      </h4>
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                        {job.description || 'No detailed requirements listed for this opening.'}
+                      </p>
                     </div>
                   </div>
-
-                  <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed italic">
-                    "{job.description || 'No detailed requirements listed for this opening.'}"
-                  </p>
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3 mt-auto">
