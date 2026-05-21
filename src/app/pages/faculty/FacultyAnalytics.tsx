@@ -3,12 +3,14 @@ import { motion } from 'motion/react';
 import { Target, Users, ChevronRight, PieChart, Activity } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
+import { useNavigate } from 'react-router';
 
 export default function FacultyAnalytics() {
   const [userEmail, setUserEmail] = useState('');
   const [skilledStudents, setSkilledStudents] = useState<any[]>([]);
   const [totalStudents, setTotalStudents] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const initAnalytics = async () => {
@@ -130,7 +132,7 @@ export default function FacultyAnalytics() {
                 <div 
                   key={student.registration_no}
                   className="p-4 bg-gray-50 border border-transparent hover:border-gray-200 rounded-2xl transition-all flex items-center justify-between cursor-pointer group"
-                  onClick={() => window.location.href = `/faculty/student/${student.registration_no}`}
+                  onClick={() => navigate(`/faculty/student/${student.registration_no}`)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-bold text-[#142361] shadow-sm">
