@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin } from 'lucide-react';
+import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
@@ -273,9 +273,17 @@ export default function TalentPool() {
                 </span>
               </div>
 
-              <p className="text-xs text-gray-400 mb-4 italic leading-relaxed">
-                💡 Drag student cards into a job to map them, or select a job below to view side-by-side comparisons.
-              </p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-6 mb-8 flex items-start gap-4">
+                <div className="p-2 bg-white rounded-xl shadow-sm">
+                  <LayoutDashboard className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#142361] mb-1">Mapping Workspace</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Drag student cards into a job to map them, or select a job below to view side-by-side comparisons.
+                  </p>
+                </div>
+              </div>
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                 {activeJobs.map(job => {

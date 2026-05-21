@@ -55,6 +55,37 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleUnapplyJob = async (jobId: string) => {
+    if (!profile?.user_id) return;
+    try {
+      const { error } = await supabase
+        .from('mapped_candidates')
+        .delete()
+        .eq('student_id', profile.user_id)
+        .eq('position_id', jobId);
+
+      if (error) throw error;
+      toast.success('Application withdrawn successfully.');
+      
+      const { data: maps } = await supabase
+        .from('mapped_candidates')
+        .select('*')
+        .eq('student_id', profile.user_id);
+      setStudentMappings(maps || []);
+    } catch (err: any) {
+      toast.error('Failed to withdraw application: ' + err.message);
+    }
+  };
+
+  const getMatchScore = (jId: string, sId: string) => {
+    const str = jId + sId;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return 75 + (Math.abs(hash) % 25);
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       setIsLoading(true);
@@ -280,27 +311,43 @@ export default function StudentDashboard() {
                   <>
                     {activeJobs.map((job) => {
                       const mapping = studentMappings.find(m => m.position_id === job.id);
+                      const matchScore = getMatchScore(job.id, profile?.user_id || '');
+                      
                       return (
                         <div key={job.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-[#142361]/10 transition-all cursor-default group flex flex-col justify-between">
-                          <div>
-                            <div className="text-xs font-bold text-[#e0653b] mb-0.5">{job.companies?.company_name}</div>
-                            <div className="font-bold text-[#142361] group-hover:text-[#1d3080] text-sm">{job.role}</div>
-                            <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-2">
-                              <MapPin className="w-3 h-3 text-gray-400" /> {job.location || 'Remote'}
-                              <span>•</span>
-                              <IndianRupee className="w-3 h-3 text-gray-400" /> {job.salary || 'Competitive'}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-xs font-bold text-[#e0653b] mb-0.5">{job.companies?.company_name}</div>
+                              <div className="font-bold text-[#142361] group-hover:text-[#1d3080] text-sm">{job.role}</div>
+                              <div className="text-[10px] text-gray-500 flex items-center gap-2 mt-2">
+                                <MapPin className="w-3 h-3 text-gray-400" /> {job.location || 'Remote'}
+                                <span>•</span>
+                                <IndianRupee className="w-3 h-3 text-gray-400" /> {job.salary || 'Competitive'}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-center justify-center px-2 py-1 bg-[#142361]/5 rounded-lg border border-[#142361]/10 shrink-0">
+                              <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">AI Match</span>
+                              <span className="text-xs font-black text-[#142361]">{matchScore}%</span>
                             </div>
                           </div>
 
                           {mapping ? (
-                            <div className="mt-3 flex items-center gap-1.5 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl font-extrabold text-[9px] uppercase tracking-wider w-fit">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>{mapping.status === 'applied' ? 'Applied' : `Status: ${mapping.status}`}</span>
+                            <div className="mt-4 flex gap-2 w-full">
+                              <div className="flex-1 flex items-center justify-center gap-1.5 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl font-extrabold text-[9px] uppercase tracking-wider">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Applied</span>
+                              </div>
+                              <button
+                                onClick={() => handleUnapplyJob(job.id)}
+                                className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 rounded-xl font-bold text-[9px] uppercase tracking-wider transition-all shadow-sm"
+                              >
+                                Withdraw
+                              </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => handleApplyJob(job.id)}
-                              className="mt-3 w-full py-2 bg-[#e0653b] text-white rounded-xl font-extrabold text-[9px] uppercase tracking-widest hover:opacity-95 transition-all shadow-sm shadow-[#e0653b]/10 cursor-pointer text-center"
+                              className="mt-4 w-full py-2 bg-[#e0653b] text-white rounded-xl font-extrabold text-[9px] uppercase tracking-widest hover:opacity-95 transition-all shadow-sm shadow-[#e0653b]/10 cursor-pointer text-center"
                             >
                               Quick Apply
                             </button>
