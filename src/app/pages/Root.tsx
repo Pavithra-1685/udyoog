@@ -61,7 +61,7 @@ export default function Root() {
           const allowed = ['/faculty-dashboard', '/faculty-analytics', '/analytics', '/profile', '/faculty/', '/talent-pool', '/jobs', '/mapped-candidates'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/faculty-dashboard'); return; }
         } else {
-          const allowed = ['/dashboard', '/analytics', '/profile', '/company/', '/talent-pool', '/faculty/', '/jobs', '/mapped-candidates', '/users-management'];
+          const allowed = ['/dashboard', '/companies', '/analytics', '/profile', '/company/', '/talent-pool', '/faculty/', '/jobs', '/mapped-candidates', '/users-management'];
           if (!allowed.some(p => location.pathname.startsWith(p))) { goTo('/dashboard'); return; }
         }
       } catch {

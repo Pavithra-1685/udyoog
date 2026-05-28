@@ -32,7 +32,8 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
     graduation: initialData?.graduation || '',
     branch: initialData?.branch || '',
     other_branch: '',
-    registration_no: initialData?.registration_no || '',
+    sif_no: initialData?.sif_no || initialData?.registration_no || '',
+    resume_url: initialData?.resume_url || '',
     home_location: initialData?.home_location || '',
     preferred_locations: initialData?.preferred_locations || [],
     github_url: initialData?.github_url || '',
@@ -166,12 +167,20 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
         throw new Error('LinkedIn profile is mandatory for all students.');
       }
 
+      if (formData.resume_url) {
+        const driveRegex = /^https:\/\/(drive|docs)\.google\.com\/.+/i;
+        if (!driveRegex.test(formData.resume_url)) {
+          throw new Error('Please enter a valid Google Drive URL for your resume.');
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,
           phone: formData.phone,
-          registration_no: formData.registration_no,
+          sif_no: formData.sif_no,
+          resume_url: formData.resume_url,
           graduation: formData.graduation,
           branch: formData.branch === 'Other' ? formData.other_branch : formData.branch,
           home_location: formData.home_location,
@@ -239,14 +248,14 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">Registration No</label>
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">SIF No</label>
             <input
               type="text"
               required
-              value={formData.registration_no}
-              onChange={e => setFormData({ ...formData, registration_no: e.target.value })}
+              value={formData.sif_no}
+              onChange={e => setFormData({ ...formData, sif_no: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#e0653b] bg-white/50"
-              placeholder="e.g. 2111001"
+              placeholder="e.g. RA2211003..."
             />
           </div>
           <div className="space-y-1">
@@ -482,6 +491,21 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
               onChange={e => setFormData({ ...formData, codechef_url: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#e0653b] bg-white/50"
             />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <ExternalLink className="w-4 h-4" /> Google Drive Resume Link (DOCX Format only)
+            </label>
+            <input
+              type="url"
+              placeholder="https://drive.google.com/file/d/..."
+              value={formData.resume_url}
+              onChange={e => setFormData({ ...formData, resume_url: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#e0653b] bg-white/50"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Host your resume as a <strong>DOCX document</strong> on Google Drive. Make sure you set the link sharing options to <strong>&quot;Anyone with the link&quot;</strong> so recruiters and faculty can view it.
+            </p>
           </div>
         </div>
       </section>

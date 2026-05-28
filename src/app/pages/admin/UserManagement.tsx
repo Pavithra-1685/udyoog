@@ -9,6 +9,7 @@ import { toast, Toaster } from 'sonner';
 export default function UserManagement() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState<'admin' | 'faculty'>('faculty');
   const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'student' | 'faculty'>('student');
@@ -57,9 +58,16 @@ export default function UserManagement() {
           .maybeSingle();
 
         const currentRole = profile?.role || user.user_metadata?.role || 'faculty';
-        if (currentRole !== 'admin') {
-          navigate(currentRole === 'student' ? '/student-dashboard' : '/faculty-dashboard');
+        setUserRole(currentRole as any);
+
+        if (currentRole !== 'admin' && currentRole !== 'faculty') {
+          navigate('/student-dashboard');
           return;
+        }
+
+        // If logged-in user is faculty, force directory registry view strictly to students
+        if (currentRole === 'faculty') {
+          setActiveTab('student');
         }
       } else {
         navigate('/');
@@ -75,7 +83,8 @@ export default function UserManagement() {
     setFormName('');
     setFormEmail('');
     setFormPassword('');
-    setFormRole(activeTab); // Autofills current selected directory tab role
+    // Faculty can only provision student accounts
+    setFormRole(userRole === 'faculty' ? 'student' : activeTab);
     setFormRegNo('');
     setFormBranch('');
     setFormCgpa('');
@@ -88,7 +97,7 @@ export default function UserManagement() {
     setFormEmail(userItem.email || '');
     setFormPassword('');
     setFormRole(userItem.role === 'faculty' ? 'faculty' : 'student');
-    setFormRegNo(userItem.registration_no || '');
+    setFormRegNo(userItem.sif_no || userItem.registration_no || '');
     setFormBranch(userItem.branch || '');
     setFormCgpa(userItem.cgpa || '');
     setShowForm(true);
@@ -104,7 +113,7 @@ export default function UserManagement() {
     setIsSubmitting(true);
     try {
       if (editingUser) {
-        // Edit User via admin RPC
+        // Edit User via RPC (handles both sif_no & registration_no)
         const { error: rpcError } = await supabase.rpc('admin_update_user', {
           p_user_id: editingUser.user_id,
           p_full_name: formName.trim(),
@@ -127,7 +136,7 @@ export default function UserManagement() {
         if (profileError) throw profileError;
         toast.success(`Profile for ${formName} successfully updated!`);
       } else {
-        // Create User via admin RPC
+        // Create User via RPC
         if (formPassword.length < 6) {
           toast.error('Password must be at least 6 characters.');
           setIsSubmitting(false);
@@ -162,7 +171,11 @@ export default function UserManagement() {
       setShowForm(false);
       fetchUsers();
     } catch (err: any) {
-      toast.error('Operation failed: ' + err.message);
+      if (err.message && err.message.includes('Password should contain at least one character')) {
+        toast.error('Password must be at least 6 characters and contain a mix of letters and numbers.');
+      } else {
+        toast.error('Operation failed: ' + err.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -173,8 +186,13 @@ export default function UserManagement() {
       toast.error('System admins cannot be deleted.');
       return;
     }
+    if (userRole === 'faculty' && userItem.role === 'faculty') {
+      toast.error('Faculty accounts cannot be deleted by other faculty members.');
+      return;
+    }
 
-    if (!window.confirm(`Are you absolutely sure you want to permanently delete the profile and credentials of ${userItem.full_name}? This action is irreversible and cascades to all portfolios and mappings.`)) return;
+    if (!window.confirm(`Are you absolutely sure you want to permanently delete the profile and credentials of student ${userItem.full_name}?`)) return;
+    if (!window.confirm(`This will destroy their Supabase authentication credentials. This action is irreversible. Press OK to delete.`)) return;
 
     try {
       const { error } = await supabase.rpc('admin_delete_user', {
@@ -191,13 +209,15 @@ export default function UserManagement() {
 
   // Filter students or faculty based on active tab
   const filteredUsers = users.filter(u => {
-    if (u.role !== activeTab) return false;
+    // Force activeTab to student if logged-in user is faculty
+    const currentTab = userRole === 'faculty' ? 'student' : activeTab;
+    if (u.role !== currentTab) return false;
 
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
 
     const nameMatches = (u.full_name || '').toLowerCase().includes(query);
-    const idMatches = (u.registration_no || '').toLowerCase().includes(query);
+    const idMatches = (u.sif_no || u.registration_no || '').toLowerCase().includes(query);
     const emailMatches = (u.email || '').toLowerCase().includes(query);
 
     return nameMatches || idMatches || emailMatches;
@@ -211,8 +231,8 @@ export default function UserManagement() {
         {/* Header Block matching SREE design */}
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#142361]">User Management</h1>
-            <p className="text-gray-500">Provision and manage Faculty and Student portal profiles</p>
+            <h1 className="text-3xl font-black text-[#142361]">Candidates & Users Registry</h1>
+            <p className="text-gray-500 font-medium">Provision and manage candidate profiles</p>
           </div>
           <button
             onClick={openCreateModal}
@@ -220,41 +240,43 @@ export default function UserManagement() {
             style={{ backgroundColor: '#e0653b' }}
           >
             <UserPlus className="w-5 h-5" />
-            Provision Account
+            Provision Candidate Account
           </button>
         </header>
 
-        {/* Directory Toggle Tabs matching SREE theme */}
-        <div className="flex border-b border-gray-200 mb-8 gap-4">
-          <button
-            onClick={() => {
-              setActiveTab('student');
-              setSearchQuery('');
-            }}
-            className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 px-1 flex items-center gap-2 ${
-              activeTab === 'student'
-                ? 'border-[#e0653b] text-[#e0653b]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            Student Directory
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('faculty');
-              setSearchQuery('');
-            }}
-            className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 px-1 flex items-center gap-2 ${
-              activeTab === 'faculty'
-                ? 'border-[#e0653b] text-[#e0653b]'
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <Briefcase className="w-4 h-4" />
-            Faculty Directory
-          </button>
-        </div>
+        {/* Directory Toggle Tabs - Only shown for Super Admins */}
+        {userRole === 'admin' && (
+          <div className="flex border-b border-gray-200 mb-8 gap-4">
+            <button
+              onClick={() => {
+                setActiveTab('student');
+                setSearchQuery('');
+              }}
+              className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 px-1 flex items-center gap-2 ${
+                activeTab === 'student'
+                  ? 'border-[#e0653b] text-[#e0653b]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Student Directory
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('faculty');
+                setSearchQuery('');
+              }}
+              className={`pb-3 text-sm font-bold uppercase tracking-wider transition-all border-b-2 px-1 flex items-center gap-2 ${
+                activeTab === 'faculty'
+                  ? 'border-[#e0653b] text-[#e0653b]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Briefcase className="w-4 h-4" />
+              Faculty Directory
+            </button>
+          </div>
+        )}
 
         {/* Search Panel matching Faculty Lookup exactly */}
         <div className="grid grid-cols-1 gap-8 mb-8">
@@ -268,7 +290,7 @@ export default function UserManagement() {
                 type="text"
                 placeholder={
                   activeTab === 'student'
-                    ? 'Search by Student Name or Registration Number...'
+                    ? 'Search by Student Name or SIF No...'
                     : 'Search by Faculty Name or Employee Code...'
                 }
                 className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-[#e0653b] focus:border-transparent outline-none transition-all text-sm font-medium"
@@ -280,14 +302,14 @@ export default function UserManagement() {
           </section>
         </div>
 
-        {/* Directory Items List in same UI cards alignment as Faculty Dashboard */}
+        {/* Directory Items List in SREE visual cards layout */}
         <section className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-[#142361] flex items-center gap-2">
               <Users className="w-5 h-5 text-[#e0653b]" />
               {activeTab === 'student' ? 'Active Students Registry' : 'Academic Supervisors Registry'}
             </h2>
-            <span className="text-xs font-bold text-gray-400 uppercase">
+            <span className="text-xs font-bold text-gray-400 uppercase font-mono">
               {filteredUsers.length} {activeTab === 'student' ? 'Students' : 'Faculty'} Listed
             </span>
           </div>
@@ -314,7 +336,7 @@ export default function UserManagement() {
                       </div>
                       <div className="text-xs text-gray-500 font-mono flex flex-wrap items-center gap-2">
                         <span className="bg-white px-2 py-0.5 rounded border border-gray-100 font-black">
-                          {activeTab === 'student' ? 'REG NO:' : 'EMP CODE:'} {userItem.registration_no || 'N/A'}
+                          {activeTab === 'student' ? 'SIF NO:' : 'EMP CODE:'} {userItem.sif_no || userItem.registration_no || 'N/A'}
                         </span>
                         <span>•</span>
                         <span>{userItem.email}</span>
@@ -448,21 +470,24 @@ export default function UserManagement() {
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Role Assignment</label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value as any)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white font-medium text-sm text-[#142361] focus:ring-2 focus:ring-[#e0653b] outline-none"
-                  >
-                    <option value="student">Student Portal</option>
-                    <option value="faculty">Faculty Portal</option>
-                  </select>
-                </div>
+                {/* Role Assignment - Only shown for system admins */}
+                {userRole === 'admin' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Role Assignment</label>
+                    <select
+                      value={formRole}
+                      onChange={(e) => setFormRole(e.target.value as any)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white font-medium text-sm text-[#142361] focus:ring-2 focus:ring-[#e0653b] outline-none"
+                    >
+                      <option value="student">Student Portal</option>
+                      <option value="faculty">Faculty Portal</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    {formRole === 'faculty' ? 'Employee Code / ID' : 'Registration Number'}
+                    {formRole === 'faculty' ? 'Employee Code / ID' : 'SIF No'}
                   </label>
                   <div className="relative">
                     <input

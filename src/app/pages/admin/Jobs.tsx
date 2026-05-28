@@ -18,6 +18,11 @@ export default function Jobs() {
   const [locationFilter, setLocationFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedJobs, setExpandedJobs] = useState<Record<string, boolean>>({});
+
+  const toggleExpandJob = (jobId: string) => {
+    setExpandedJobs(prev => ({ ...prev, [jobId]: !prev[jobId] }));
+  };
 
   // Form Modal States
   const [showForm, setShowForm] = useState(false);
@@ -66,6 +71,14 @@ export default function Jobs() {
 
   const handleApplyJob = async (jobId: string) => {
     if (!userId) return;
+
+    // Limit Applied Jobs to 3
+    const appliedCount = studentMappings.filter(m => m.status === 'applied').length;
+    if (appliedCount >= 3) {
+      toast.warning('Application Limit Reached: You can only apply to a maximum of 3 jobs at a time. Please withdraw an application first.');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('mapped_candidates')
@@ -79,18 +92,6 @@ export default function Jobs() {
 
       if (error) throw error;
       toast.success('Successfully applied! Your profile has been shared with the recruiters.');
-      
-      // Confetti blast!
-      try {
-        const confetti = (await import('canvas-confetti')).default;
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-      } catch (confettiError) {
-        console.error('Confetti animation failed to load:', confettiError);
-      }
 
       // Refresh student mappings
       const { data: maps } = await supabase
@@ -416,8 +417,38 @@ export default function Jobs() {
                       <h4 className="text-[10px] font-bold text-[#142361]/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                         <FileText className="w-4 h-4" /> Job Description
                       </h4>
-                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
-                        {job.description || 'No detailed requirements listed for this opening.'}
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-outfit">
+                        {(() => {
+                          const desc = job.description || 'No detailed requirements listed for this opening.';
+                          const isExpanded = expandedJobs[job.id];
+                          if (desc.length <= 120 || isExpanded) {
+                            return (
+                              <>
+                                {desc}
+                                {desc.length > 120 && (
+                                  <button
+                                    onClick={() => toggleExpandJob(job.id)}
+                                    className="text-xs font-bold text-[#e0653b] hover:text-[#142361] ml-1.5 transition-colors focus:outline-none uppercase tracking-wider"
+                                  >
+                                    [ Read Less ]
+                                  </button>
+                                )}
+                              </>
+                            );
+                          } else {
+                            return (
+                              <>
+                                {desc.slice(0, 120)}...
+                                <button
+                                  onClick={() => toggleExpandJob(job.id)}
+                                  className="text-xs font-bold text-[#e0653b] hover:text-[#142361] ml-1.5 transition-colors focus:outline-none uppercase tracking-wider"
+                                >
+                                  [ Click to Read More ]
+                                </button>
+                              </>
+                            );
+                          }
+                        })()}
                       </p>
                     </div>
                   </div>

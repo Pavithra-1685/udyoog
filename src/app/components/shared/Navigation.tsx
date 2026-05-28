@@ -60,8 +60,8 @@ export default function Navigation({ userEmail }: NavigationProps) {
   ];
 
   const adminNavItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Companies' },
-    { path: '/jobs', icon: Briefcase, label: 'Job Roles' },
+    { path: '/dashboard', icon: Briefcase, label: 'Open Positions' },
+    { path: '/companies', icon: LayoutDashboard, label: 'Companies' },
     { path: '/mapped-candidates', icon: Layers, label: 'Placements' },
     { path: '/talent-pool', icon: Search, label: 'Talent Pool' },
     { path: '/users-management', icon: Users, label: 'Users' },

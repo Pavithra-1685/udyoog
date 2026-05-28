@@ -27,9 +27,10 @@ export const router = createBrowserRouter([
       { index: true, Component: Auth },
 
       // Admin-only routes
-      { path: 'dashboard', element: <RoleGuard allowedRoles={['admin']}><Dashboard /></RoleGuard> },
+      { path: 'dashboard', element: <RoleGuard allowedRoles={['admin']}><Jobs /></RoleGuard> },
+      { path: 'companies', element: <RoleGuard allowedRoles={['admin']}><Dashboard /></RoleGuard> },
       { path: 'company/:id', element: <RoleGuard allowedRoles={['admin']}><CompanyDetail /></RoleGuard> },
-      { path: 'users-management', element: <RoleGuard allowedRoles={['admin']}><UserManagement /></RoleGuard> },
+      { path: 'users-management', element: <RoleGuard allowedRoles={['admin', 'faculty']}><UserManagement /></RoleGuard> },
 
       // Student-only routes
       { path: 'student-dashboard', element: <RoleGuard allowedRoles={['student']}><StudentDashboard /></RoleGuard> },

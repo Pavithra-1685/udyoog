@@ -40,7 +40,7 @@ export default function Dashboard() {
       setCompanies(companiesData || []);
     } catch (error: any) {
       console.error('Error fetching companies:', error.message);
-      toast.error('Failed to sync with backend. Check connection.');
+      toast.error(`Failed to load companies: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -61,9 +61,13 @@ export default function Dashboard() {
         if (profile?.role === 'student') {
           navigate('/student-dashboard');
           return;
+        } else if (profile?.role === 'faculty') {
+          navigate('/faculty-dashboard');
+          return;
         }
       } else {
         navigate('/');
+        return;
       }
       fetchCompanies();
     };

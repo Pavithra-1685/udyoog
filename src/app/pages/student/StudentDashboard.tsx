@@ -18,6 +18,14 @@ export default function StudentDashboard() {
 
   const handleApplyJob = async (jobId: string) => {
     if (!profile?.user_id) return;
+
+    // Count active applications
+    const appliedCount = studentMappings.filter(m => m.status === 'applied').length;
+    if (appliedCount >= 3) {
+      toast.warning('Application Limit Reached: You can only apply to a maximum of 3 jobs at a time. Please withdraw an application first.');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('mapped_candidates')
@@ -31,18 +39,6 @@ export default function StudentDashboard() {
 
       if (error) throw error;
       toast.success('Successfully applied! Your profile has been shared with recruiters.');
-      
-      // Confetti blast!
-      try {
-        const confetti = (await import('canvas-confetti')).default;
-        confetti({
-          particleCount: 150,
-          spread: 80,
-          origin: { y: 0.6 }
-        });
-      } catch (confettiError) {
-        console.error('Confetti animation failed to load:', confettiError);
-      }
 
       // Refresh student mappings
       const { data: maps } = await supabase
@@ -102,7 +98,7 @@ export default function StudentDashboard() {
           if (profileRes.data) {
             setProfile({ ...profileRes.data, email: user.email });
             if (!profileRes.data.graduation) {
-              navigate('/profile');
+              toast('Complete your profile to get AI-powered insights.', { icon: '✨' });
             }
           }
           setActiveJobs(jobsRes.data || []);
@@ -222,8 +218,8 @@ export default function StudentDashboard() {
               <h2 className="text-2xl font-bold mb-1" style={{ color: '#142361' }}>
                 {profile?.full_name || 'Student Name'}
               </h2>
-              <p className="text-gray-500 text-sm mb-6 uppercase tracking-widest font-bold">
-                {profile?.registration_no || 'Reg No Not Set'}
+              <p className="text-gray-500 text-sm mb-6 uppercase tracking-widest font-bold font-mono">
+                SIF NO: {profile?.sif_no || profile?.registration_no || 'Not Set'}
               </p>
               
               <div className="flex flex-col gap-3">

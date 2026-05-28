@@ -65,7 +65,7 @@ export default function Auth({ onLogin }: AuthProps) {
         }
         if (!fullName.trim()) { toast.error('Name is required.'); return; }
         if (password.length < 6) { toast.error('Min. 6 chars for password.'); return; }
-        if (role === 'student' && !regNo.trim()) { toast.error('Registration number is required.'); return; }
+        if (role === 'student' && !regNo.trim()) { toast.error('SIF No is required.'); return; }
         if (role === 'faculty' && !regNo.trim()) { toast.error('Employee ID is required.'); return; }
 
         const { data, error } = await supabase.auth.signUp({
@@ -75,6 +75,7 @@ export default function Auth({ onLogin }: AuthProps) {
             data: {
               full_name: fullName.trim(),
               role,
+              sif_no: (role === 'student' || role === 'faculty') ? regNo.trim() : null,
               registration_no: (role === 'student' || role === 'faculty') ? regNo.trim() : null,
             },
           },
@@ -96,31 +97,50 @@ export default function Auth({ onLogin }: AuthProps) {
 
       // Enforce Admin hardcoded check
       if (role === 'admin') {
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
-        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
-        if (loginEmail !== adminEmail || password !== adminPassword) {
+        const adminEmail1 = 'yuvashankar2211@gmail.com';
+        const adminPassword1 = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
+        const adminEmail2 = 'rajarajan2994@gmail.com';
+        const adminPassword2 = 'Rajarajan@pc@takshashila@1';
+
+        const isUser1 = loginEmail === adminEmail1 && password === adminPassword1;
+        const isUser2 = loginEmail === adminEmail2 && password === adminPassword2;
+
+        if (!isUser1 && !isUser2) {
           throw new Error('Access denied. Invalid Admin credentials.');
         }
       }
 
-      // If student or faculty and they provided a Reg No / Employee ID (regNo), try to resolve it.
-      if (mode === 'login' && (role === 'student' || role === 'faculty') && regNo.trim()) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('registration_no', regNo.trim())
-          .eq('role', role)
-          .maybeSingle();
-        
-        if (profileData?.email) {
-          loginEmail = profileData.email;
-        } else if (!email.trim()) {
-          throw new Error(`${role === 'student' ? 'Registration number' : 'Employee ID'} not recognized. Please provide your registered email.`);
+      // If student or faculty: both email and sif_no / employee_id are strictly required
+      if (mode === 'login' && (role === 'student' || role === 'faculty')) {
+        if (!email.trim() || !regNo.trim()) {
+          throw new Error(`Both Email and ${role === 'student' ? 'SIF No' : 'Employee ID'} are strictly required.`);
+        }
+
+        // Prior to signing in: use the SECURITY DEFINER RPC to bypass RLS
+        const { data: profileRows, error: checkErr } = await supabase
+          .rpc('lookup_profile_by_sif_no', { p_sif_no: regNo.trim() });
+
+        if (checkErr) {
+          console.error('Pre-sign-in check error:', checkErr);
+        }
+
+        const profileCheck = profileRows && profileRows.length > 0 ? profileRows[0] : null;
+
+        if (!profileCheck) {
+          throw new Error(`No account found with ${role === 'student' ? 'SIF No' : 'Employee ID'} "${regNo.trim()}".`);
+        }
+
+        if (profileCheck.email?.trim().toLowerCase() !== email.trim().toLowerCase()) {
+          throw new Error(`The provided Email does not match our records for ${role === 'student' ? 'SIF No' : 'Employee ID'} "${regNo.trim()}".`);
+        }
+
+        if (profileCheck.role !== role) {
+          throw new Error(`Access denied. The account associated with this ${role === 'student' ? 'SIF No' : 'Employee ID'} is registered as a ${profileCheck.role}.`);
         }
       }
 
       if (!loginEmail) {
-        throw new Error('Please enter your email or registration number/employee ID.');
+        throw new Error('Please enter your email and registration number/employee ID.');
       }
 
       let authResult;
@@ -140,17 +160,22 @@ export default function Auth({ onLogin }: AuthProps) {
 
       // Special provision for hardcoded admin auto-registration if not present in database auth
       if (authResult.error && role === 'admin') {
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
-        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
+        const adminEmail1 = 'yuvashankar2211@gmail.com';
+        const adminPassword1 = import.meta.env.VITE_ADMIN_PASSWORD || 'Yuva@123';
+        const adminEmail2 = 'rajarajan2994@gmail.com';
+        const adminPassword2 = 'Rajarajan@pc@takshashila@1';
         
-        if (loginEmail === adminEmail && password === adminPassword) {
+        const isValidAdmin1 = loginEmail === adminEmail1 && password === adminPassword1;
+        const isValidAdmin2 = loginEmail === adminEmail2 && password === adminPassword2;
+
+        if (isValidAdmin1 || isValidAdmin2) {
           toast.info('Initializing system admin account...');
           const signUpRes = await supabase.auth.signUp({
             email: loginEmail,
             password,
             options: {
               data: {
-                full_name: 'System Admin',
+                full_name: isValidAdmin1 ? 'Yuva Shankar (Admin)' : 'Rajarajan (Admin)',
                 role: 'admin',
               }
             }
@@ -176,8 +201,10 @@ export default function Auth({ onLogin }: AuthProps) {
 
       if (data.user) {
         // Silent DB override to force 'admin' role for system administrator credentials
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() || 'yuvashankar2211@gmail.com';
-        if (data.user.email?.trim().toLowerCase() === adminEmail) {
+        const adminEmail1 = 'yuvashankar2211@gmail.com';
+        const adminEmail2 = 'rajarajan2994@gmail.com';
+        const lowerEmail = data.user.email?.trim().toLowerCase();
+        if (lowerEmail === adminEmail1 || lowerEmail === adminEmail2) {
           await supabase.from('profiles').update({ role: 'admin' }).eq('user_id', data.user.id);
         }
 
@@ -296,8 +323,8 @@ export default function Auth({ onLogin }: AuthProps) {
                   value={regNo}
                   onChange={e => setRegNo(e.target.value)}
                   className={inputClass}
-                  placeholder={role === 'student' ? 'Reg No' : 'Employee ID'}
-                  required={mode === 'signup' || !email.trim()}
+                  placeholder={role === 'student' ? 'SIF No' : 'Employee ID'}
+                  required={mode === 'signup' || role === 'student' || role === 'faculty'}
                 />
               </div>
             )}
@@ -310,7 +337,7 @@ export default function Auth({ onLogin }: AuthProps) {
                 onChange={e => setEmail(e.target.value)}
                 className={inputClass}
                 placeholder="Email"
-                required={mode === 'signup' || !regNo.trim()}
+                required
               />
             </div>
 

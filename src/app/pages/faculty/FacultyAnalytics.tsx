@@ -130,9 +130,9 @@ export default function FacultyAnalytics() {
             ) : skilledStudents.length > 0 ? (
               skilledStudents.map((student) => (
                 <div 
-                  key={student.registration_no}
+                  key={student.user_id}
                   className="p-4 bg-gray-50 border border-transparent hover:border-gray-200 rounded-2xl transition-all flex items-center justify-between cursor-pointer group"
-                  onClick={() => navigate(`/faculty/student/${student.registration_no}`)}
+                  onClick={() => navigate(`/faculty/student/${student.user_id}`)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-bold text-[#142361] shadow-sm">
@@ -140,7 +140,7 @@ export default function FacultyAnalytics() {
                     </div>
                     <div>
                       <div className="font-bold text-[#142361] group-hover:text-[#e0653b] transition-colors">{student.full_name}</div>
-                      <div className="text-[10px] text-gray-400 font-mono">{student.registration_no}</div>
+                      <div className="text-[10px] text-gray-400 font-mono">{student.sif_no || student.registration_no}</div>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#e0653b] transition-all" />

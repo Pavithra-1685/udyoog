@@ -49,7 +49,7 @@ export default function FacultyStudentDetail() {
         const { data } = await supabase
           .from('profiles')
           .select('*')
-          .eq('registration_no', id)
+          .eq('sif_no', id)
           .maybeSingle();
         studentData = data;
       }
@@ -166,9 +166,9 @@ export default function FacultyStudentDetail() {
                   {student.full_name?.charAt(0)}
                 </div>
                 <h2 className="text-2xl font-bold text-[#142361] mb-1">{student.full_name}</h2>
-                <p className="text-[#e0653b] font-mono text-sm font-bold mb-4">{student.registration_no}</p>
+                <p className="text-[#e0653b] font-mono text-sm font-bold mb-4">SIF NO: {student.sif_no || student.registration_no}</p>
                 
-                <div className="flex gap-3 mb-6">
+                <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
                   {student.linkedin_url && (
                     <a href={student.linkedin_url} target="_blank" className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                       <Linkedin className="w-5 h-5" />
@@ -177,6 +177,16 @@ export default function FacultyStudentDetail() {
                   {student.github_url && (
                     <a href={student.github_url} target="_blank" className="p-2 bg-gray-50 text-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
                       <Github className="w-5 h-5" />
+                    </a>
+                  )}
+                  {student.resume_url && (
+                    <a 
+                      href={student.resume_url} 
+                      target="_blank" 
+                      className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg border border-green-200 transition-all flex items-center gap-1.5 text-xs font-bold shadow-sm"
+                      title="Google Drive Resume (DOCX)"
+                    >
+                      <Briefcase className="w-4 h-4 text-green-600 animate-pulse" /> Resume
                     </a>
                   )}
                 </div>

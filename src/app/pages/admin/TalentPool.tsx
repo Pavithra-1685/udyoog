@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin, LayoutDashboard } from 'lucide-react';
+import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin, LayoutDashboard, FileText, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
@@ -158,7 +158,7 @@ export default function TalentPool() {
     }
 
     const finalScore = Math.round(skillsScore + academicScore + branchScore);
-    return Math.min(Math.max(finalScore, 10), 100);
+    return Math.min(Math.max(finalScore, 0), 100);
   };
 
   const handleMapCandidate = async (studentId: string, jobId: string) => {
@@ -214,6 +214,26 @@ export default function TalentPool() {
     }
   };
 
+  // Admin delete student account permanently
+  const handleAdminDeleteStudent = async (studentItem: any) => {
+    if (!window.confirm(`Are you absolutely sure you want to permanently delete student ${studentItem.full_name}?`)) return;
+    if (!window.confirm(`This will destroy their Supabase authentication credentials and profile cascade. This action is irreversible. Press OK to finalize.`)) return;
+
+    try {
+      const { error } = await supabase.rpc('admin_delete_user', {
+        p_user_id: studentItem.user_id
+      });
+
+      if (error) throw error;
+      toast.success(`Successfully deleted student ${studentItem.full_name} and their credentials.`);
+      
+      // Refresh local list
+      fetchData();
+    } catch (err: any) {
+      toast.error('Deletion failed: ' + err.message);
+    }
+  };
+
   // Drag and Drop implementation
   const handleDragStart = (e: React.DragEvent, studentId: string) => {
     e.dataTransfer.setData('text/plain', studentId);
@@ -231,7 +251,7 @@ export default function TalentPool() {
   const filteredStudents = students.filter(s => {
     const query = searchQuery.toLowerCase();
     const name = (s.full_name || '').toLowerCase();
-    const regNo = (s.registration_no || '').toLowerCase();
+    const regNo = (s.sif_no || s.registration_no || '').toLowerCase();
     const branch = (s.branch || '').toLowerCase();
     const skillList = (s.skills || []).map((sk: any) => (typeof sk === 'string' ? sk : sk.name).toLowerCase()).join(' ');
     
@@ -246,7 +266,7 @@ export default function TalentPool() {
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-[#142361]">Smart Candidate Mapping</h1>
-            <p className="text-gray-500 font-medium">Drag-and-drop or select candidates to assign them to active roles</p>
+            <p className="text-gray-500 font-medium font-outfit">Drag-and-drop or select candidates to assign them to active roles</p>
           </div>
           <button
             onClick={() => navigate('/mapped-candidates')}
@@ -268,7 +288,7 @@ export default function TalentPool() {
                   <Briefcase className="w-5 h-5 text-[#e0653b]" />
                   Active Job Roles
                 </h3>
-                <span className="text-[10px] font-black uppercase text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                <span className="text-[10px] font-black uppercase text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-mono">
                   {activeJobs.length} open
                 </span>
               </div>
@@ -279,7 +299,7 @@ export default function TalentPool() {
                 </div>
                 <div>
                   <h3 className="font-bold text-[#142361] mb-1">Mapping Workspace</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-sm text-gray-600 leading-relaxed font-outfit">
                     Drag student cards into a job to map them, or select a job below to view side-by-side comparisons.
                   </p>
                 </div>
@@ -308,7 +328,7 @@ export default function TalentPool() {
                             {job.companies?.company_name}
                           </span>
                           {mappedCount > 0 && (
-                            <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 uppercase">
+                            <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 uppercase font-mono">
                               {mappedCount} Mapped
                             </span>
                           )}
@@ -347,14 +367,14 @@ export default function TalentPool() {
               <div className="relative w-full sm:max-w-md">
                 <input
                   type="text"
-                  placeholder="Search student by name, skill, branch, or registration no..."
+                  placeholder="Search student by name, skill, branch, or SIF No..."
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#e0653b] outline-none text-sm transition-all"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 font-mono">
                 {filteredStudents.length} Students Listed
               </span>
             </div>
@@ -392,22 +412,63 @@ export default function TalentPool() {
                               <h4 className="font-extrabold text-base text-[#142361] hover:text-[#e0653b] transition-all">
                                 {student.full_name}
                               </h4>
-                              <p className="text-[10px] text-gray-400 font-mono mt-0.5">{student.registration_no}</p>
+                              <p className="text-[10px] text-gray-400 font-mono mt-0.5">{student.sif_no || student.registration_no}</p>
                             </div>
                           </div>
 
-                          {selectedJob && (
-                            <div className="text-right">
+                          <div className="flex items-center gap-2 text-right">
+                            {selectedJob && (
                               <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase ${
                                 matchScore >= 80 
                                   ? 'bg-green-50 text-green-600 border-green-200' 
                                   : matchScore >= 50
                                     ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                    : 'bg-blue-50 text-blue-600 border-blue-200'
+                                    : matchScore > 0
+                                      ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                      : 'bg-gray-50 text-gray-400 border-gray-200'
                               }`}>
-                                {matchScore}% Match
+                                {matchScore > 0 ? `${matchScore}% Match` : 'New'}
                               </span>
-                            </div>
+                            )}
+                            
+                            {userRole === 'admin' && (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await handleAdminDeleteStudent(student);
+                                }}
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                title="Delete Student permanent credentials"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Social Links & Resume display on card */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                          {student.github_url && (
+                            <a href={student.github_url} target="_blank" rel="noreferrer" className="p-1 hover:bg-gray-100 rounded text-gray-700 transition-all" onClick={e => e.stopPropagation()}>
+                              <Github className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {student.linkedin_url && (
+                            <a href={student.linkedin_url} target="_blank" rel="noreferrer" className="p-1 hover:bg-blue-50 rounded text-[#0077b5] transition-all" onClick={e => e.stopPropagation()}>
+                              <Linkedin className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {student.resume_url && (
+                            <a 
+                              href={student.resume_url} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="px-2 py-0.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-0.5 border border-green-150 transition-all shadow-sm" 
+                              title="DOCX Resume Link"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <FileText className="w-3 h-3 text-green-600" /> Resume
+                            </a>
                           )}
                         </div>
 
@@ -427,7 +488,7 @@ export default function TalentPool() {
                       {/* Info & Mapping Controls */}
                       <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold mt-4 pt-3 border-t border-gray-50">
                         <div className="flex gap-2">
-                          <span>GPA: <strong className="text-[#142361]">{student.cgpa || '0.0'}</strong></span>
+                          <span>GPA: <strong className="text-[#142361] font-mono">{student.cgpa || '0.0'}</strong></span>
                           <span>•</span>
                           <span className="truncate max-w-[80px]">{student.branch || 'General'}</span>
                         </div>
@@ -436,8 +497,8 @@ export default function TalentPool() {
                           {isAssignedToSelectedJob ? (
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleUnmapCandidate(student.user_id, selectedJob.id);
+                                  e.stopPropagation();
+                                  handleUnmapCandidate(student.user_id, selectedJob.id);
                               }}
                               className="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-extrabold uppercase tracking-tighter"
                             >
@@ -490,8 +551,8 @@ export default function TalentPool() {
                   
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-[#e0653b]">Smart match compatibility score</span>
-                      <span className="bg-green-500 text-white font-black text-xs px-3 py-1 rounded-full">
+                      <span className="text-[10px] font-black uppercase text-[#e0653b] tracking-wider">Smart match compatibility score</span>
+                      <span className="bg-green-500 text-white font-black text-xs px-3 py-1 rounded-full font-mono">
                         {calculateMatch(selectedStudent, selectedJob)}% Correct Match
                       </span>
                     </div>
@@ -536,7 +597,7 @@ export default function TalentPool() {
                     <div className="space-y-1">
                       <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Requirements & Description</div>
                       <p className="text-xs text-gray-600 italic leading-relaxed border-l-4 border-gray-100 pl-3">
-                        "{selectedJob.description || 'No detailed instructions listed.'}"
+                        &quot;{selectedJob.description || 'No detailed instructions listed.'}&quot;
                       </p>
                     </div>
                   </div>
@@ -549,7 +610,7 @@ export default function TalentPool() {
                         Candidate Talent Profile
                       </div>
                       
-                      {/* GitHub & LinkedIn Links */}
+                      {/* GitHub & LinkedIn & Resume Links */}
                       <div className="flex items-center gap-2">
                         {selectedStudent.github_url && (
                           <a 
@@ -573,6 +634,17 @@ export default function TalentPool() {
                             <Linkedin className="w-4 h-4 text-[#0077b5]" />
                           </a>
                         )}
+                        {selectedStudent.resume_url && (
+                          <a 
+                            href={selectedStudent.resume_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-all border border-green-200 flex items-center gap-1 text-xs font-bold shadow-sm"
+                            title="Google Drive Resume (DOCX)"
+                          >
+                            <FileText className="w-4 h-4 text-green-600" /> Resume (DOCX)
+                          </a>
+                        )}
                       </div>
                     </div>
 
@@ -583,7 +655,7 @@ export default function TalentPool() {
                       <div>
                         <h4 className="text-xl font-extrabold text-[#142361]">{selectedStudent.full_name}</h4>
                         <div className="text-[10px] text-gray-400 font-mono mt-0.5">
-                          {selectedStudent.registration_no} • {selectedStudent.branch || 'General'}
+                          SIF NO: {selectedStudent.sif_no || selectedStudent.registration_no} • {selectedStudent.branch || 'General'}
                         </div>
                       </div>
                     </div>
@@ -592,7 +664,7 @@ export default function TalentPool() {
                     <div className="grid grid-cols-3 gap-3 text-xs font-bold bg-blue-50/20 p-3 rounded-2xl border border-blue-100/30">
                       <div>
                         <span className="text-gray-400 text-[8px] uppercase tracking-wider block">CGPA</span>
-                        <span className="text-sm text-[#142361] font-black block mt-0.5">{selectedStudent.cgpa || '0.00'}</span>
+                        <span className="text-sm text-[#142361] font-black block mt-0.5 font-mono">{selectedStudent.cgpa || '0.00'}</span>
                       </div>
                       <div>
                         <span className="text-gray-400 text-[8px] uppercase tracking-wider block">Hometown</span>
@@ -618,7 +690,7 @@ export default function TalentPool() {
                           const name = typeof skill === 'string' ? skill : skill.name;
                           const level = typeof skill === 'object' ? skill.level : '';
                           return (
-                            <span key={name} className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-bold rounded-full uppercase flex items-center gap-1 shadow-sm">
+                            <span key={name} className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-bold rounded-full uppercase flex items-center gap-1 shadow-sm font-outfit">
                               {name} {level && <span className="opacity-50 text-[7px]">({level})</span>}
                             </span>
                           );
@@ -661,13 +733,28 @@ export default function TalentPool() {
                 {/* Footer mapping controls */}
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
                   <button
-                    onClick={() => navigate(`/faculty/student/${selectedStudent.user_id}`)}
+                    onClick={() => {
+                      setSelectedStudent(null);
+                      navigate(`/faculty/student/${selectedStudent.sif_no || selectedStudent.registration_no}`);
+                    }}
                     className="text-[#142361] font-extrabold text-xs hover:underline flex items-center gap-1.5"
                   >
-                    View Complete Portfolio Portfolio <ChevronRight className="w-3.5 h-3.5" />
+                    View Complete Portfolio <ChevronRight className="w-3.5 h-3.5" />
                   </button>
 
                   <div className="flex gap-3">
+                    {userRole === 'admin' && (
+                      <button
+                        onClick={async () => {
+                          await handleAdminDeleteStudent(selectedStudent);
+                          setSelectedStudent(null);
+                        }}
+                        className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-xl font-bold text-xs shadow-md shadow-red-600/10 transition-all uppercase flex items-center gap-1.5"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete Student
+                      </button>
+                    )}
+                    
                     {mappings.some(m => m.student_id === selectedStudent.user_id && m.position_id === selectedJob.id) ? (
                       <button
                         onClick={() => handleUnmapCandidate(selectedStudent.user_id, selectedJob.id)}
