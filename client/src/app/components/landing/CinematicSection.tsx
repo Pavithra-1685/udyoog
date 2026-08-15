@@ -21,7 +21,7 @@ export default function CinematicSection() {
         <div className="max-w-3xl mx-auto w-full text-center space-y-8">
 
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-black uppercase">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] sm:leading-[1.05] text-black uppercase">
             {heroData.heading.part1}<br />
             <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
             {heroData.heading.part3}<br />
