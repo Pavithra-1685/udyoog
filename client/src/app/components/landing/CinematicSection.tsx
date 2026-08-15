@@ -12,54 +12,39 @@ export default function CinematicSection() {
     <div id="home" className="w-full">
       {/* ── HERO SECTION ── */}
       <section 
-        className="w-full min-h-[90vh] py-20 md:py-32 px-6 flex items-center bg-white text-black relative"
+        className="w-full min-h-[80vh] py-24 md:py-36 px-6 flex items-center bg-white text-black relative"
         style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0)',
           backgroundSize: '24px 24px',
         }}
       >
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Left Column: Text & CTAs */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 border border-gray-150 rounded-full text-[10px] font-black uppercase text-[#C66E00] tracking-wider">
-              {heroData.badge}
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-black uppercase">
-              {heroData.heading.part1}<br />
-              <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
-              {heroData.heading.part3}<br />
-              {heroData.heading.part4}
-            </h1>
-            
-            <p className="text-sm sm:text-base text-gray-500 font-medium max-w-lg leading-relaxed">
-              {heroData.description}
-            </p>
-            
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  const el = document.getElementById('about');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="px-6 py-3.5 bg-[#C66E00] hover:bg-[#a55b00] text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(198,110,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-              >
-                {heroData.exploreBtnLabel}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+        <div className="max-w-3xl mx-auto w-full text-center space-y-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 border border-gray-150 rounded-full text-[10px] font-black uppercase text-[#C66E00] tracking-wider">
+            {heroData.badge}
           </div>
-
-          {/* Right Column: Hero Preview Frame Mockup */}
-          <div className="lg:col-span-5 w-full flex justify-center">
-            <div className="relative w-full aspect-[4/3] sm:aspect-video lg:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-gray-100 bg-gray-50">
-              <img
-                src="/assets/ezgif-frame-008.jpg"
-                alt="UDYOOG Ecosystem"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-            </div>
+          
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-black uppercase">
+            {heroData.heading.part1}<br />
+            <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
+            {heroData.heading.part3}<br />
+            {heroData.heading.part4}
+          </h1>
+          
+          <p className="text-sm sm:text-base text-gray-500 font-medium max-w-xl mx-auto leading-relaxed">
+            {heroData.description}
+          </p>
+          
+          <div className="pt-2 flex justify-center">
+            <button
+              onClick={() => {
+                const el = document.getElementById('about');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-6 py-3.5 bg-[#C66E00] hover:bg-[#a55b00] text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(198,110,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            >
+              {heroData.exploreBtnLabel}
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>
