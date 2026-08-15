@@ -114,7 +114,6 @@ button:active, [data-slot="button"]:active {
 .reveal-visual,
 .fade-in-scroll {
 	opacity: 1 !important;
-	transform: none !important;
 	visibility: visible !important;
 }
 
