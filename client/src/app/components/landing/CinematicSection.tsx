@@ -77,9 +77,9 @@ export default function CinematicSection() {
             {aboutData.steps.map((step, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-300 hover:shadow-md hover:border-gray-200"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-[#C66E00]/30 hover:-translate-y-1 cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shadow-sm shrink-0 border border-gray-200 text-[#C66E00]">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-[#C66E00] group-hover:text-white flex items-center justify-center shadow-sm shrink-0 border border-gray-200 text-[#C66E00] transition-colors duration-300">
                   {stepIcon(idx)}
                 </div>
                 <div>
