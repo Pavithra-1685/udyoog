@@ -12,7 +12,7 @@ export default function CinematicSection() {
     <div id="home" className="w-full">
       {/* ── HERO SECTION ── */}
       <section 
-        className="w-full min-h-[80vh] py-24 md:py-36 px-6 flex items-center bg-white text-black relative"
+        className="w-full min-h-screen pt-[70px] pb-16 px-6 flex items-center bg-white text-black relative"
         style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0)',
           backgroundSize: '24px 24px',
