@@ -48,11 +48,11 @@ export default function CinematicSection() {
 
           {/* Right Column: Brand Banner Mockup */}
           <div className="lg:col-span-5 w-full">
-            <div className="bg-gray-50 p-2 sm:p-3 rounded-[32px] border border-gray-150 shadow-md hover:shadow-xl hover:-translate-y-1.5 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 transition-all duration-300 group cursor-pointer">
+            <div className="bg-gray-50 p-2 sm:p-3 rounded-[32px] border border-gray-150 shadow-md hover:shadow-2xl hover:-translate-y-2 hover:border-[#C66E00]/30 active:scale-[0.98] active:shadow-lg active:-translate-y-0.5 transition-all duration-500 group cursor-pointer">
               <img 
                 src="/logo/brand-banner.png" 
                 alt="Udyoog Ecosystem by Naraatral" 
-                className="w-full h-auto object-cover rounded-[24px] shadow-sm group-hover:scale-[1.01] transition-transform duration-500"
+                className="w-full h-auto object-cover rounded-[24px] shadow-sm group-hover:scale-[1.03] group-hover:brightness-[1.02] transition-all duration-700 ease-out"
               />
             </div>
           </div>
