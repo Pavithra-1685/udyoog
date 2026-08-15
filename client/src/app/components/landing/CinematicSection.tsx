@@ -18,9 +18,9 @@ export default function CinematicSection() {
           backgroundSize: '24px 24px',
         }}
       >
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="max-w-3xl text-left space-y-8">
-            
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          {/* Left Column: Text & CTAs */}
+          <div className="lg:col-span-7 space-y-8 text-left">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] sm:leading-[1.05] text-black uppercase">
               {heroData.heading.part1}<br />
               <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
@@ -43,6 +43,17 @@ export default function CinematicSection() {
                 {heroData.exploreBtnLabel}
                 <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+
+          {/* Right Column: Brand Banner Mockup */}
+          <div className="lg:col-span-5 w-full">
+            <div className="bg-gray-50 p-2 sm:p-3 rounded-[32px] border border-gray-150 shadow-md hover:shadow-xl hover:-translate-y-1.5 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 transition-all duration-300 group cursor-pointer">
+              <img 
+                src="/logo/brand-banner.png" 
+                alt="Udyoog Ecosystem by Naraatral" 
+                className="w-full h-auto object-cover rounded-[24px] shadow-sm group-hover:scale-[1.01] transition-transform duration-500"
+              />
             </div>
           </div>
         </div>
