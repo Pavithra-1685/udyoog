@@ -106,3 +106,15 @@ button:active, [data-slot="button"]:active {
 	opacity: 1;
 	transform: translateY(0);
 }
+
+/* Overrides to make all reveal/scroll animations static and professional */
+.reveal-heading,
+.reveal-sub,
+.reveal-item,
+.reveal-visual,
+.fade-in-scroll {
+	opacity: 1 !important;
+	transform: none !important;
+	visibility: visible !important;
+}
+

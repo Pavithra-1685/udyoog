@@ -14,37 +14,18 @@ export default function LandingPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const container = document.getElementById('cinematic-container');
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        // If we are currently inside the cinematic scroll section
-        if (rect.top <= 100 && rect.bottom >= window.innerHeight * 0.4) {
-          const outerHeight = container.offsetHeight;
-          const scrollRange = outerHeight - window.innerHeight;
-          const currentScroll = window.scrollY - container.offsetTop;
-          const progress = Math.min(Math.max(currentScroll / scrollRange, 0), 1);
-          
-          if (progress < 0.50) {
-            setActiveSection('home');
-          } else {
-            setActiveSection('about');
-          }
-          return;
-        }
-      }
-
-      // Check below-fold sections
-      const sections = ['pathways', 'how-it-works'];
+      const sections = ['home', 'about', 'pathways', 'how-it-works'];
+      let currentActive = 'home';
       for (const id of sections) {
         const el = document.getElementById(id);
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= window.innerHeight * 0.6 && rect.bottom >= window.innerHeight * 0.2) {
-            setActiveSection(id);
-            break;
+          if (rect.top <= window.innerHeight * 0.4) {
+            currentActive = id;
           }
         }
       }
+      setActiveSection(currentActive);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

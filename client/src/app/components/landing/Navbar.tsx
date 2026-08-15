@@ -17,16 +17,6 @@ export default function Navbar({ activeSection = 'home' }: NavbarProps) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (id === 'about') {
-      const container = document.getElementById('cinematic-container');
-      if (container) {
-        const outerHeight = container.offsetHeight;
-        const scrollRange = outerHeight - window.innerHeight;
-        const targetScroll = container.offsetTop + 0.58 * scrollRange;
-        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-      }
-      return;
-    }
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });

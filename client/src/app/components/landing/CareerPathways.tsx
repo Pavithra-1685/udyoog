@@ -73,75 +73,8 @@ export default function CareerPathways() {
     });
   };
 
-  const handleCardMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const badge = card.querySelector('.icon-badge');
-    const icon = badge?.querySelector('svg') as SVGElement;
-    const skillTags = card.querySelectorAll('.skill-tag');
-
-    animate(card, {
-      scale: 1.03,
-      y: -6,
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08)',
-      duration: 350,
-      ease: 'outQuad'
-    });
-
-    if (badge) {
-      animate(badge, {
-        scale: 1.1,
-        rotate: '8deg',
-        backgroundColor: '#C66E00',
-        color: '#ffffff',
-        duration: 350,
-        ease: 'outQuad',
-        complete: () => {
-          if (icon) {
-            icon.style.color = '#ffffff';
-          }
-        }
-      });
-    }
-
-    if (skillTags.length) {
-      animate(skillTags, {
-        scale: [1, 1.12, 1],
-        delay: (_, i) => i * 40,
-        duration: 400,
-        ease: 'outQuad'
-      });
-    }
-  };
-
-  const handleCardMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const badge = card.querySelector('.icon-badge');
-    const icon = badge?.querySelector('svg') as SVGElement;
-
-    animate(card, {
-      scale: 1.0,
-      y: 0,
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-      duration: 350,
-      ease: 'outQuad'
-    });
-
-    if (badge) {
-      animate(badge, {
-        scale: 1.0,
-        rotate: '0deg',
-        backgroundColor: '#f9fafb',
-        color: '#C66E00',
-        duration: 350,
-        ease: 'outQuad',
-        complete: () => {
-          if (icon) {
-            icon.style.color = '#C66E00';
-          }
-        }
-      });
-    }
-  };
+  const handleCardMouseEnter = () => {};
+  const handleCardMouseLeave = () => {};
 
   return (
     <section
@@ -203,14 +136,11 @@ export default function CareerPathways() {
             return (
               <div
                 key={index}
-                onMouseEnter={handleCardMouseEnter}
-                onMouseLeave={handleCardMouseLeave}
-                className="bg-white rounded-3xl p-8 flex flex-col justify-between cursor-pointer shadow-lg origin-center min-w-[310px] sm:min-w-[350px] md:min-w-[380px] lg:min-w-[400px] flex-shrink-0 snap-start opacity-100 visible"
-                style={{ transform: 'scale(1) translateY(0px)' }}
+                className="bg-white border border-gray-150 rounded-3xl p-8 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 origin-center min-w-[310px] sm:min-w-[350px] md:min-w-[380px] lg:min-w-[400px] flex-shrink-0 snap-start opacity-100 visible group"
               >
                 <div className="space-y-6">
                   {/* Icon Badge */}
-                  <div className="icon-badge w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-[var(--gold-medium)] origin-center">
+                  <div className="icon-badge w-12 h-12 bg-gray-50 group-hover:bg-[#C66E00] rounded-2xl flex items-center justify-center text-[var(--gold-medium)] group-hover:text-white transition-all duration-300 origin-center">
                     <Icon className="w-6 h-6" />
                   </div>
 
@@ -224,7 +154,7 @@ export default function CareerPathways() {
                       {role.skills.map((skill, sIdx) => (
                         <span
                           key={sIdx}
-                          className="skill-tag px-2 py-0.5 bg-gray-50 rounded-md text-[10px] font-black text-gray-500 origin-center"
+                          className="skill-tag px-2 py-0.5 bg-gray-50 group-hover:bg-gray-100 rounded-md text-[10px] font-black text-gray-500 transition-colors duration-300 origin-center"
                         >
                           {skill}
                         </span>

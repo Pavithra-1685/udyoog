@@ -33,9 +33,9 @@ export default function CareerJourney() {
         {/* Header Block */}
         <div className="text-center space-y-4 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black tracking-tight text-black overflow-hidden py-1">
-            <span className="reveal-heading inline-block opacity-0">{careerJourneyData.heading}</span>
+            <span className="reveal-heading inline-block opacity-100">{careerJourneyData.heading}</span>
           </h2>
-          <p className="reveal-sub opacity-0 text-gray-500 font-semibold text-sm">
+          <p className="reveal-sub opacity-100 text-gray-500 font-semibold text-sm">
             {careerJourneyData.subheading}
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function CareerJourney() {
               return (
                 <div
                   key={index}
-                  className="reveal-item opacity-0 flex-shrink-0 lg:flex-1 min-w-[150px] sm:min-w-[170px] lg:min-w-0 snap-start flex flex-col items-center text-center space-y-3 relative"
+                  className="reveal-item opacity-100 flex-shrink-0 lg:flex-1 min-w-[150px] sm:min-w-[170px] lg:min-w-0 snap-start flex flex-col items-center text-center space-y-3 relative"
                 >
                   {/* Step Icon Bullet */}
                   <div

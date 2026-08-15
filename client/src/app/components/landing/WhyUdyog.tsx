@@ -26,51 +26,8 @@ export default function WhyUdyog() {
     }
   };
 
-  const handleCardMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const badge = card.querySelector('.icon-badge');
-
-    animate(card, {
-      scale: 1.03,
-      y: -4,
-      boxShadow: '0 15px 20px -5px rgba(0, 0, 0, 0.05), 0 8px 8px -5px rgba(0, 0, 0, 0.03)',
-      duration: 350,
-      ease: 'outQuad'
-    });
-
-    if (badge) {
-      animate(badge, {
-        scale: 1.1,
-        backgroundColor: '#C66E00',
-        color: '#ffffff',
-        duration: 350,
-        ease: 'outQuad'
-      });
-    }
-  };
-
-  const handleCardMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const badge = card.querySelector('.icon-badge');
-
-    animate(card, {
-      scale: 1.0,
-      y: 0,
-      boxShadow: 'none',
-      duration: 350,
-      ease: 'outQuad'
-    });
-
-    if (badge) {
-      animate(badge, {
-        scale: 1.0,
-        backgroundColor: '#ffffff',
-        color: '#C66E00',
-        duration: 350,
-        ease: 'outQuad'
-      });
-    }
-  };
+  const handleCardMouseEnter = () => {};
+  const handleCardMouseLeave = () => {};
 
   return (
     <section
@@ -84,9 +41,9 @@ export default function WhyUdyog() {
           {/* Header */}
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-black overflow-hidden py-1">
-              <span className="reveal-heading inline-block opacity-0">{whyUdyogData.heading}</span>
+              <span className="reveal-heading inline-block opacity-100">{whyUdyogData.heading}</span>
             </h2>
-            <p className="reveal-sub opacity-0 text-gray-500 font-semibold text-base">
+            <p className="reveal-sub opacity-100 text-gray-500 font-semibold text-base">
               {whyUdyogData.subheading}
             </p>
           </div>
@@ -98,13 +55,10 @@ export default function WhyUdyog() {
               return (
                 <div
                   key={index}
-                  onMouseEnter={handleCardMouseEnter}
-                  onMouseLeave={handleCardMouseLeave}
-                  className="reveal-item opacity-0 space-y-3 p-5 rounded-2xl bg-gray-50 transition-all duration-300 origin-center cursor-pointer shadow-sm"
-                  style={{ transform: 'scale(1) translateY(0px)' }}
+                  className="reveal-item border border-gray-150 space-y-3 p-5 rounded-2xl bg-gray-50 transition-all duration-300 origin-center cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-1 group"
                 >
                   {/* Icon */}
-                  <div className="icon-badge w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[var(--gold-medium)] origin-center shadow-sm">
+                  <div className="icon-badge w-10 h-10 bg-white group-hover:bg-[#C66E00] group-hover:text-white rounded-xl flex items-center justify-center text-[var(--gold-medium)] origin-center shadow-sm transition-all duration-300">
                     <Icon className="w-5 h-5" />
                   </div>
 
