@@ -56,7 +56,7 @@ export default function UserRoles() {
         </div>
 
         {/* Roles Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {userRolesData.roles.map((role, index) => {
             const Icon = getRoleIcon(index);
 

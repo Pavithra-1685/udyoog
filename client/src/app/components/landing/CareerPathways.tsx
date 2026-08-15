@@ -113,7 +113,7 @@ export default function CareerPathways() {
           {/* Left Chevron Navigation Button */}
           <button
             onClick={() => handleScroll('left')}
-            className="p-3 bg-gray-50 hover:bg-gray-100 text-black rounded-full flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90 cursor-pointer absolute left-2 md:-left-8 lg:-left-12 top-1/2 -translate-y-1/2 z-20 border border-gray-100/50"
+            className="p-3 bg-gray-50 hover:bg-gray-100 text-black rounded-full hidden md:flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90 cursor-pointer absolute left-2 md:-left-8 lg:-left-12 top-1/2 -translate-y-1/2 z-20 border border-gray-100/50"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -121,7 +121,7 @@ export default function CareerPathways() {
           {/* Right Chevron Navigation Button */}
           <button
             onClick={() => handleScroll('right')}
-            className="p-3 bg-gray-50 hover:bg-gray-100 text-black rounded-full flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90 cursor-pointer absolute right-2 md:-right-8 lg:-right-12 top-1/2 -translate-y-1/2 z-20 border border-gray-100/50"
+            className="p-3 bg-gray-50 hover:bg-gray-100 text-black rounded-full hidden md:flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90 cursor-pointer absolute right-2 md:-right-8 lg:-right-12 top-1/2 -translate-y-1/2 z-20 border border-gray-100/50"
           >
             <ChevronRight className="w-5 h-5" />
           </button>

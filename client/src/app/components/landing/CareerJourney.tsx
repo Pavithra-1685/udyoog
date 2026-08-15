@@ -27,7 +27,7 @@ export default function CareerJourney() {
     <section
       id="journey"
       ref={sectionRef}
-      className="py-20 bg-[#fafafa] text-black px-4 sm:px-6 md:px-8 overflow-hidden"
+      className="py-20 bg-[#fafafa] text-black px-6 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header Block */}
