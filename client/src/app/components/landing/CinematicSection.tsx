@@ -18,31 +18,32 @@ export default function CinematicSection() {
           backgroundSize: '24px 24px',
         }}
       >
-        <div className="max-w-3xl mx-auto w-full text-center space-y-8">
-
-          
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] sm:leading-[1.05] text-black uppercase">
-            {heroData.heading.part1}<br />
-            <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
-            {heroData.heading.part3}<br />
-            {heroData.heading.part4}
-          </h1>
-          
-          <p className="text-sm sm:text-base text-gray-500 font-medium max-w-xl mx-auto leading-relaxed">
-            {heroData.description}
-          </p>
-          
-          <div className="pt-2 flex justify-center">
-            <button
-              onClick={() => {
-                const el = document.getElementById('about');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-6 py-3.5 bg-[#C66E00] hover:bg-[#a55b00] text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(198,110,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-            >
-              {heroData.exploreBtnLabel}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="max-w-3xl text-left space-y-8">
+            
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] sm:leading-[1.05] text-black uppercase">
+              {heroData.heading.part1}<br />
+              <span className="text-[#C66E00]">{heroData.heading.part2}</span><br />
+              {heroData.heading.part3}<br />
+              {heroData.heading.part4}
+            </h1>
+            
+            <p className="text-sm sm:text-base text-gray-500 font-medium max-w-xl leading-relaxed">
+              {heroData.description}
+            </p>
+            
+            <div className="pt-2 flex justify-start">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('about');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-6 py-3.5 bg-[#C66E00] hover:bg-[#a55b00] text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(198,110,0,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+              >
+                {heroData.exploreBtnLabel}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
