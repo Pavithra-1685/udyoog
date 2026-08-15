@@ -3,9 +3,9 @@ import { heroData, aboutData } from '../../lib/landingData';
 
 export default function CinematicSection() {
   const stepIcon = (i: number) => {
-    if (i === 0) return <Target className="w-5 h-5 text-[#C66E00]" />;
-    if (i === 1) return <Search className="w-5 h-5 text-[#C66E00]" />;
-    return <BookOpen className="w-5 h-5 text-[#C66E00]" />;
+    if (i === 0) return <Target className="w-5 h-5 transition-colors duration-300" />;
+    if (i === 1) return <Search className="w-5 h-5 transition-colors duration-300" />;
+    return <BookOpen className="w-5 h-5 transition-colors duration-300" />;
   };
 
   return (
