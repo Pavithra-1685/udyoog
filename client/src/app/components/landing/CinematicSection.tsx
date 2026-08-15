@@ -12,13 +12,13 @@ export default function CinematicSection() {
     <div id="home" className="w-full">
       {/* ── HERO SECTION ── */}
       <section 
-        className="w-full min-h-screen pt-[70px] pb-16 px-6 flex items-center bg-white text-black relative"
+        className="w-full min-h-0 lg:min-h-screen pt-[100px] lg:pt-[70px] pb-16 lg:pb-0 px-6 flex items-center bg-white text-black relative"
         style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0)',
           backgroundSize: '24px 24px',
         }}
       >
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
           {/* Left Column: Text & CTAs */}
           <div className="lg:col-span-7 space-y-8 text-left">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] sm:leading-[1.05] text-black uppercase">
