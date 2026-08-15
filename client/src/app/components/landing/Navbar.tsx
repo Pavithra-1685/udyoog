@@ -40,14 +40,14 @@ export default function Navbar({ activeSection = 'home' }: NavbarProps) {
           {/* Brand Logo */}
           <div
             onClick={() => scrollToSection('home')}
-            className="flex items-center gap-3 cursor-pointer select-none"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none"
           >
-            <img src="/logo/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
-            <span className={`text-2xl font-black tracking-wider uppercase transition-colors duration-500 ${isDarkTheme ? 'text-white' : 'text-black'}`}>
+            <img src="/logo/logo.png" alt="Logo" className="h-8 sm:h-9 w-auto object-contain" />
+            <span className={`text-lg sm:text-2xl font-black tracking-wider uppercase transition-colors duration-500 ${isDarkTheme ? 'text-white' : 'text-black'}`}>
               {navbarData.brandName}
             </span>
-            <div className={`h-6 w-[1.5px] hidden sm:block transition-colors duration-500 ${isDarkTheme ? 'bg-white/15' : 'bg-black/15'}`} />
-            <div className="hidden sm:flex items-center gap-1 text-[12px] font-bold">
+            <div className={`h-5 sm:h-6 w-[1.5px] transition-colors duration-500 ${isDarkTheme ? 'bg-white/15' : 'bg-black/15'}`} />
+            <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[12px] font-bold">
               <span className={`transition-colors duration-500 ${isDarkTheme ? 'text-white/40' : 'text-black/40'}`}>by</span>
               <span className="text-[#c66e00] font-black tracking-wider uppercase">
                 NARAATRAL
