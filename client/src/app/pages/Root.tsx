@@ -114,7 +114,9 @@ export default function Root() {
   return (
     <>
       <Toaster position="top-right" richColors />
-      <Outlet />
+      <div key={location.pathname} className="animate-page-zoom w-full min-h-screen flex flex-col">
+        <Outlet />
+      </div>
     </>
   );
 }
