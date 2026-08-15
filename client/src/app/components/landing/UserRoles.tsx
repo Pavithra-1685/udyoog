@@ -63,7 +63,7 @@ export default function UserRoles() {
             return (
               <div
                 key={index}
-                className="reveal-item bg-white border border-gray-150 rounded-3xl p-8 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-2 hover:border-[#C66E00]/30 transition-all duration-300 group"
+                className="reveal-item bg-white border border-gray-150 rounded-3xl p-8 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-2 hover:border-[#C66E00]/30 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 transition-all duration-300 group"
               >
                 <div className="space-y-6">
                   {/* Icon Badge */}

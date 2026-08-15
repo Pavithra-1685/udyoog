@@ -55,7 +55,7 @@ export default function WhyUdyog() {
               return (
                 <div
                   key={index}
-                  className="reveal-item border border-gray-150 space-y-3 p-5 rounded-2xl bg-gray-50 transition-all duration-300 origin-center cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-2 hover:bg-white hover:border-[#C66E00]/30 group"
+                  className="reveal-item border border-gray-150 space-y-3 p-5 rounded-2xl bg-gray-50 transition-all duration-300 origin-center cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-2 hover:bg-white hover:border-[#C66E00]/30 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 group"
                 >
                   {/* Icon */}
                   <div className="icon-badge w-10 h-10 bg-white group-hover:bg-[#C66E00] group-hover:text-white rounded-xl flex items-center justify-center text-[var(--gold-medium)] origin-center shadow-sm transition-all duration-300">
@@ -76,7 +76,7 @@ export default function WhyUdyog() {
 
         {/* Right Column: Text Summary Card */}
         <div className="lg:col-span-5 w-full mt-6 lg:mt-0">
-          <div className="bg-gray-50 rounded-3xl p-8 space-y-6 shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:bg-white border border-transparent hover:border-[#C66E00]/15 transition-all duration-300 group">
+          <div className="bg-gray-50 rounded-3xl p-8 space-y-6 shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:bg-white border border-transparent hover:border-[#C66E00]/15 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 transition-all duration-300 group">
             <div className="space-y-2">
               <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
                 {whyUdyogData.summaryCard.badge}

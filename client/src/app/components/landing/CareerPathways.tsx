@@ -136,7 +136,7 @@ export default function CareerPathways() {
             return (
               <div
                 key={index}
-                className="bg-white border border-gray-150 rounded-3xl p-6 sm:p-8 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 origin-center w-[85vw] sm:w-[350px] md:w-[380px] lg:w-[400px] flex-shrink-0 snap-start opacity-100 visible group"
+                className="bg-white border border-gray-150 rounded-3xl p-6 sm:p-8 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1.5 active:scale-[0.98] active:shadow-md active:-translate-y-0.5 transition-all duration-300 origin-center w-[85vw] sm:w-[350px] md:w-[380px] lg:w-[400px] flex-shrink-0 snap-start opacity-100 visible group"
               >
                 <div className="space-y-6">
                   {/* Icon Badge */}
