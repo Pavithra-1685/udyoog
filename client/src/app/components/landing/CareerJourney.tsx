@@ -65,7 +65,7 @@ export default function CareerJourney() {
                   >
                     <Icon className="w-4 h-4" />
                     {/* Tiny Number Badge */}
-                    <div className="absolute -top-1 -right-1 bg-gray-900 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[8px] font-black font-mono">
+                    <div className="absolute -top-1.5 -right-1.5 bg-gray-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black font-mono">
                       {index + 1}
                     </div>
                   </div>
