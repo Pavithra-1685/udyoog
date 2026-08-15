@@ -40,6 +40,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Temporary Debug Route to inspect filesystem
+app.get('/api/debug-paths', (req, res) => {
+  try {
+    const cwd = process.cwd();
+    const filesInCwd = fs.readdirSync(cwd);
+    const parentDir = path.join(cwd, '..');
+    let parentFiles = [];
+    try { parentFiles = fs.readdirSync(parentDir); } catch(e) { parentFiles = [e.message]; }
+    
+    const clientDistResolved = path.join(__dirname, '../client/dist');
+    const exists = fs.existsSync(clientDistResolved);
+    let clientDistFiles = [];
+    if (exists) {
+      try { clientDistFiles = fs.readdirSync(clientDistResolved); } catch(e) { clientDistFiles = [e.message]; }
+    }
+    
+    res.json({
+      cwd,
+      __dirname,
+      filesInCwd,
+      parentDir,
+      parentFiles,
+      clientDistResolved,
+      clientDistExists: exists,
+      clientDistFiles,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
 // Example route: Get positions (jobs) through backend
 app.get('/api/jobs', async (req, res) => {
   try {
