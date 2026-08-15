@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { navbarData } from '../../lib/landingData';
@@ -10,6 +10,17 @@ interface NavbarProps {
 export default function Navbar({ activeSection = 'home' }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+    };
+  }, [mobileMenuOpen]);
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -106,50 +117,53 @@ export default function Navbar({ activeSection = 'home' }: NavbarProps) {
       </nav>
 
       {/* Mobile Menu Panel */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-x-0 top-[69px] z-40 flex flex-col p-6 space-y-6 transition-colors duration-500"
-          style={{
-            background: isDarkTheme ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: isDarkTheme ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
-          }}
-        >
-          <div className="flex flex-col gap-4 pb-6">
-            {navbarData.menuItems.map((item) => {
-              const isActive = activeSection === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  className={`text-left text-base font-black uppercase tracking-widest transition-colors duration-500 ${
-                    isActive
-                      ? 'text-[#c66e00]'
-                      : isDarkTheme
-                      ? 'text-white/50'
-                      : 'text-black/60'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigate('/auth');
-              }}
-              className="w-full py-3 bg-[#C66E00] text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2"
-            >
-              {navbarData.getStartedLabel}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+      <div
+        className={`fixed inset-x-0 top-[69px] z-40 flex flex-col p-6 space-y-6 transition-all duration-300 ease-out origin-top ${
+          mobileMenuOpen 
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' 
+            : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'
+        }`}
+        style={{
+          background: isDarkTheme ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: isDarkTheme ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
+        }}
+      >
+        <div className="flex flex-col gap-4 pb-6">
+          {navbarData.menuItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`text-left text-base font-black uppercase tracking-widest transition-colors duration-500 ${
+                  isActive
+                    ? 'text-[#c66e00]'
+                    : isDarkTheme
+                    ? 'text-white/50'
+                    : 'text-black/60'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/auth');
+            }}
+            className="w-full py-3 bg-[#C66E00] text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {navbarData.getStartedLabel}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </>
   );
 }

@@ -44,24 +44,27 @@ export default function LandingPage() {
       {/* Fixed navbar — always on top */}
       <Navbar activeSection={activeSection} />
 
-      {/*
-       * CinematicSection owns the entire Home → About journey.
-       * It is 700vh tall; a sticky inner div pins the viewport
-       * while ScrollTrigger reads progress to drive the canvas.
-       *
-       * Frames 01–40 → Home content visible
-       * Frames 41–79 → About content cross-dissolves in
-       */}
-      <CinematicSection />
+      {/* Main content sections to blur on mobile menu open */}
+      <div className="page-content-wrapper transition-all duration-300">
+        {/*
+         * CinematicSection owns the entire Home → About journey.
+         * It is 700vh tall; a sticky inner div pins the viewport
+         * while ScrollTrigger reads progress to drive the canvas.
+         *
+         * Frames 01–40 → Home content visible
+         * Frames 41–79 → About content cross-dissolves in
+         */}
+        <CinematicSection />
 
-      {/* Normal below-fold sections */}
-      <CareerPathways />
-      <HowItWorks />
-      <UserRoles />
-      <CareerJourney />
-      <WhyUdyog />
-      <CTA />
-      <Footer />
+        {/* Normal below-fold sections */}
+        <CareerPathways />
+        <HowItWorks />
+        <UserRoles />
+        <CareerJourney />
+        <WhyUdyog />
+        <CTA />
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -136,3 +136,9 @@ button:active, [data-slot="button"]:active {
 	}
 }
 
+/* Blur page content when mobile menu is open */
+body.mobile-menu-open .page-content-wrapper {
+	filter: blur(8px);
+	pointer-events: none;
+}
+
