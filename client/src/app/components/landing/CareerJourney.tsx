@@ -44,12 +44,12 @@ export default function CareerJourney() {
         <div className="relative w-full">
           {/* Horizontal Track Line */}
           <div
-            className="absolute left-8 right-8 top-5 h-[2px] bg-gray-200/80 rounded hidden lg:block pointer-events-none"
+            className="absolute left-8 right-8 top-9 h-[2px] bg-gray-200/80 rounded hidden lg:block pointer-events-none"
             style={{ zIndex: 0 }}
           />
 
           <div
-            className="flex flex-row overflow-x-auto lg:overflow-x-visible gap-4 pb-6 snap-x snap-mandatory no-scrollbar select-none"
+            className="flex flex-row overflow-x-auto lg:overflow-x-visible gap-4 pt-4 pb-6 snap-x snap-mandatory no-scrollbar select-none"
             style={{ zIndex: 1 }}
           >
             {careerJourneyData.steps.map((step, index) => {
