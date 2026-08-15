@@ -19,9 +19,7 @@ export default function CinematicSection() {
         }}
       >
         <div className="max-w-3xl mx-auto w-full text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 border border-gray-150 rounded-full text-[10px] font-black uppercase text-[#C66E00] tracking-wider">
-            {heroData.badge}
-          </div>
+
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-black uppercase">
             {heroData.heading.part1}<br />
@@ -57,9 +55,7 @@ export default function CinematicSection() {
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Column: Details */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-black uppercase text-[#C66E00] tracking-wider shadow-sm">
-              {aboutData.badge}
-            </div>
+
             
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-black">
               {aboutData.heading}
