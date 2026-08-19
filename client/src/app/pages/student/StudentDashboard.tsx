@@ -343,7 +343,7 @@ export default function StudentDashboard() {
                           ) : (
                             <button
                               onClick={() => handleApplyJob(job.id)}
-                              className="mt-4 w-full py-2 bg-[var(--gold-gradient)] text-white rounded-xl font-extrabold text-[9px] uppercase tracking-widest hover:opacity-95 transition-all shadow-sm shadow-[var(--gold-medium)]/10 cursor-pointer text-center"
+                              className="mt-4 w-full py-2 bg-[var(--gold-gradient)] text-black rounded-xl font-extrabold text-[9px] uppercase tracking-widest hover:opacity-95 transition-all shadow-sm shadow-[var(--gold-medium)]/10 cursor-pointer text-center"
                             >
                               Quick Apply
                             </button>
