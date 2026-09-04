@@ -16,6 +16,7 @@ import {
 import Navigation from '../../components/shared/Navigation';
 import ActivityForm from '../../components/admin/ActivityForm';
 import CompanyForm from '../../components/admin/CompanyForm';
+import AiSummaryModal from '../../components/admin/AiSummaryModal';
 import { supabase } from '../../../lib/supabase';
 import { generateProfessionalSummary } from '../../../lib/ai';
 import { toast, Toaster } from 'sonner';
@@ -44,6 +45,23 @@ export default function CompanyDetail() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+
+  const handleGenerateSummary = async () => {
+    if (!company) return;
+    setIsGenerating(true);
+    try {
+      const summary = await generateProfessionalSummary(company, company.activities || []);
+      setAiSummary(summary);
+      setShowSummaryModal(true);
+      toast.success('Analysis complete!');
+    } catch (error: any) {
+      toast.error(error.message || 'Analysis failed.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const fetchCompanyData = async () => {
     if (!id) return;
@@ -228,6 +246,18 @@ export default function CompanyDetail() {
 
             <div className="flex flex-wrap gap-3">
               <button
+                onClick={handleGenerateSummary}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-[var(--gold-medium)] font-bold transition-all shadow-xs"
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
+                AI Analysis
+              </button>
+              <button
                 onClick={() => setShowEditForm(true)}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-gray-200 transition-all hover:bg-white bg-white/50 text-[#111111] font-semibold shadow-sm"
               >
@@ -358,6 +388,15 @@ export default function CompanyDetail() {
           />
         )}
       </AnimatePresence>
+
+      <AiSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        companyName={company.company_name}
+        stage={company.stage}
+        summary={aiSummary}
+      />
+
       <Toaster position="top-right" />
     </div>
   );

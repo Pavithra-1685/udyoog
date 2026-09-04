@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Target, Users, ChevronRight, PieChart, Activity } from 'lucide-react';
+import { Target, Users, ChevronRight, PieChart } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { useNavigate } from 'react-router';
@@ -84,12 +84,7 @@ export default function FacultyAnalytics() {
                   </div>
                   <div className="font-bold text-[#111111]">{totalStudents - skilledStudents.length}</div>
                 </div>
-                <div className="pt-6 border-t border-gray-100">
-                  <div className="flex items-center gap-2 text-[#111111] font-bold">
-                    <Activity className="w-4 h-4" />
-                    <span className="text-sm">Healthy Progress</span>
-                  </div>
-                </div>
+
               </div>
             </div>
           </section>

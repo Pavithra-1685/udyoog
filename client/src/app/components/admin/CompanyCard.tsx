@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ExternalLink, Calendar, Users, Briefcase, ArrowRight, Sparkles, Loader2, X, FileText, MapPin, IndianRupee, Clock } from 'lucide-react';
+import { ChevronDown, ExternalLink, Calendar, Users, Briefcase, ArrowRight, Sparkles, Loader2, FileText, MapPin, IndianRupee, Clock } from 'lucide-react';
 import { generateProfessionalSummary } from '../../../lib/ai';
 import { toast } from 'sonner';
+import AiSummaryModal from './AiSummaryModal';
 
 export interface Position {
   id: string;
@@ -101,39 +102,43 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
           className="p-6 cursor-pointer relative"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <button
-            onClick={handleGenerateSummary}
-            disabled={isGenerating}
-            className="absolute top-6 right-16 p-2 rounded-xl bg-white/50 border border-gray-200 hover:bg-white transition-all group shadow-sm z-10"
-            title="Generate AI Summary"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[var(--gold-medium)]" />
-            ) : (
-              <Sparkles className="w-5 h-5 text-[var(--gold-medium)] group-hover:scale-110 transition-transform" />
-            )}
-          </button>
-
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1 pr-12">
-              <h2 className="text-2xl font-bold mb-1" style={{ color: '#111111' }}>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl font-bold mb-1 truncate" style={{ color: '#111111' }}>
                 {company.company_name}
               </h2>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-4 h-4" />
-                  <span>{company.primary_contact_name}</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Users className="w-4 h-4 shrink-0 text-gray-400" />
+                  <span className="truncate">{company.primary_contact_name}</span>
                 </div>
-                <span>{company.primary_email}</span>
+                <span className="truncate text-gray-500">{company.primary_email}</span>
               </div>
             </div>
 
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronDown className="w-6 h-6" style={{ color: '#111111' }} />
-            </motion.div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                onClick={handleGenerateSummary}
+                disabled={isGenerating}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-[var(--gold-medium)] transition-all group shadow-xs flex items-center gap-2 text-xs font-bold"
+                title="Generate AI Strategic Summary"
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[var(--gold-medium)]" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-[var(--gold-medium)] group-hover:scale-110 transition-transform" />
+                )}
+                <span className="hidden sm:inline">AI Analysis</span>
+              </button>
+
+              <motion.div
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <ChevronDown className="w-5 h-5" style={{ color: '#111111' }} />
+              </motion.div>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
@@ -304,65 +309,13 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
         </AnimatePresence>
       </motion.div>
 
-      <AnimatePresence>
-        {showSummaryModal && aiSummary && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSummaryModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-[#111111]/5">
-                      <Sparkles className="w-6 h-6 text-[var(--gold-medium)]" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold" style={{ color: '#111111' }}>
-                        AI Strategic Analysis
-                      </h3>
-                      <p className="text-sm text-gray-500">{company.company_name}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowSummaryModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X className="w-6 h-6 text-gray-400" />
-                  </button>
-                </div>
-
-                <div className="max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
-                  <div className="prose prose-blue max-w-none">
-                    <div className="whitespace-pre-wrap text-gray-700 leading-relaxed text-lg">
-                      {aiSummary}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
-                  <button
-                    onClick={() => setShowSummaryModal(false)}
-                    className="px-6 py-2.5 rounded-xl text-white font-semibold transition-all hover:opacity-90"
-                    style={{ backgroundColor: '#111111' }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <AiSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        companyName={company.company_name}
+        stage={company.stage}
+        summary={aiSummary}
+      />
     </>
   );
 }

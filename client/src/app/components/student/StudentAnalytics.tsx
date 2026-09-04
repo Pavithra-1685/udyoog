@@ -228,6 +228,122 @@ export default function StudentAnalytics({ profile }: StudentAnalyticsProps) {
           </div>
         </motion.div>
       </div>
+
+      {/* NEW: Industry Benchmark Comparison & Domain Readiness */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Industry Skill Benchmark Bar Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="lg:col-span-2 backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-gray-200/50 p-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold flex items-center gap-2 text-[#111111]">
+                <Zap className="w-6 h-6 text-[var(--gold-medium)]" />
+                Industry Skill Benchmark & Gap Analysis
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">Comparing your current skill levels with target industry hiring standards</p>
+            </div>
+            <span className="text-[10px] font-black uppercase px-2.5 py-1 bg-[#f4f1e6] text-[var(--gold-medium)] border border-[var(--gold-medium)]/30 rounded-full">
+              Hiring Benchmark
+            </span>
+          </div>
+
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  {
+                    skill: 'Data Structures',
+                    YourScore: skills.some(s => s.name?.toLowerCase().includes('data') || s.name?.toLowerCase().includes('algo') || s.name?.toLowerCase().includes('dsa')) ? 85 : 55,
+                    Target: 80
+                  },
+                  {
+                    skill: 'Web / App Dev',
+                    YourScore: skills.some(s => s.name?.toLowerCase().includes('react') || s.name?.toLowerCase().includes('js') || s.name?.toLowerCase().includes('web') || s.name?.toLowerCase().includes('html')) ? 90 : 45,
+                    Target: 75
+                  },
+                  {
+                    skill: 'Database & SQL',
+                    YourScore: skills.some(s => s.name?.toLowerCase().includes('sql') || s.name?.toLowerCase().includes('database') || s.name?.toLowerCase().includes('mongo')) ? 80 : 40,
+                    Target: 70
+                  },
+                  {
+                    skill: 'Problem Solving',
+                    YourScore: skills.length > 3 ? 88 : 50,
+                    Target: 85
+                  },
+                  {
+                    skill: 'System Design',
+                    YourScore: skills.some(s => s.level === 'Expert') ? 82 : 35,
+                    Target: 65
+                  }
+                ]}
+                margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                <XAxis dataKey="skill" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <Bar dataKey="YourScore" name="Your Level" fill="var(--gold-medium)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Target" name="Industry Target" fill="#e2e8f0" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Domain Competency Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-gray-200/50 p-8 flex flex-col justify-between"
+        >
+          <div>
+            <h3 className="text-xl font-bold mb-4 text-[#111111] flex items-center gap-2">
+              <Award className="w-5 h-5 text-[var(--gold-medium)]" />
+              Domain Readiness
+            </h3>
+            <p className="text-xs text-gray-500 mb-6">Targeted proficiency index by domain specialization.</p>
+
+            <div className="space-y-5">
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1.5 text-[#111111]">
+                  <span>Software Engineering</span>
+                  <span className="text-[var(--gold-medium)] font-mono">{Math.min(skills.length * 20 + 20, 95)}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[var(--gold-gradient)]" style={{ width: `${Math.min(skills.length * 20 + 20, 95)}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1.5 text-[#111111]">
+                  <span>Data & AI Readiness</span>
+                  <span className="text-emerald-600 font-mono">{profile?.cgpa ? Math.min(parseFloat(profile.cgpa) * 10, 90) : 40}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500" style={{ width: `${profile?.cgpa ? Math.min(parseFloat(profile.cgpa) * 10, 90) : 40}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1.5 text-[#111111]">
+                  <span>Problem Solving Index</span>
+                  <span className="text-blue-600 font-mono">{completionPercent}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500" style={{ width: `${completionPercent}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+        </motion.div>
+      </div>
     </div>
   );
 }

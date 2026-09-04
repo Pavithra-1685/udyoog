@@ -98,7 +98,7 @@ export default function StudentDashboard() {
           if (profileRes.data) {
             setProfile({ ...profileRes.data, email: user.email });
             if (!profileRes.data.graduation) {
-              toast('Complete your profile to get AI-powered insights.', { icon: '✨' });
+              toast('Complete your profile to get AI-powered insights.');
             }
           }
           setActiveJobs(jobsRes.data || []);

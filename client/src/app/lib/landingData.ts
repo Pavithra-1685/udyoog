@@ -13,7 +13,7 @@ export const navbarData = {
 };
 
 export const heroData = {
-  badge: 'NARAATRAL’s University & Udyoog Ecosystem',
+  badge: 'Udyoog Ecosystem',
   heading: {
     part1: 'Education to',
     part2: 'Opportunity.',
@@ -214,7 +214,7 @@ export const footerData = {
   tagline: 'Education to Opportunity, Opportunity to Outcomes.',
   description: 'A connected university and Udyoog ecosystem bridging institutions, students, and employers.',
   copyright: '© 2026 Udyoog. All rights reserved.',
-  designedBy: 'NARAATRAL University & Udyoog Ecosystem',
+  designedBy: 'Udyoog Ecosystem',
   columns: {
     platform: {
       title: 'Platform',
@@ -235,8 +235,8 @@ export const footerData = {
       title: 'Support',
       links: [
         { label: 'Contact Support', path: '/auth' },
-        { label: 'Privacy Policy', path: '#' },
-        { label: 'Terms of Service', path: '#' }
+        { label: 'Privacy Policy', path: '/privacy-policy' },
+        { label: 'Terms of Service', path: '/terms-of-service' }
       ]
     }
   }

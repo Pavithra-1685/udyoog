@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Mail, Phone, GraduationCap, MapPin, 
   Github, Linkedin, ExternalLink, Plus, Trash2, 
-  Star, Sparkles, Loader2, Save, BookOpen
+  Star, Sparkles, Loader2, Save, BookOpen, Upload, FileText, CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from 'sonner';
@@ -53,6 +53,57 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
   const [newSkillLevel, setNewSkillLevel] = useState<'Beginner' | 'Intermediate' | 'Expert'>('Beginner');
   const [newLocation, setNewLocation] = useState('');
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
+  const [uploadFileName, setUploadFileName] = useState<string>('');
+  const [uploadFileSize, setUploadFileSize] = useState<string>('');
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate format (DOCX or PDF)
+    const fileNameLower = file.name.toLowerCase();
+    const isDocx = fileNameLower.endsWith('.docx') || fileNameLower.endsWith('.doc');
+    const isPdf = fileNameLower.endsWith('.pdf');
+    if (!isDocx && !isPdf) {
+      toast.error('Invalid format. Only DOCX or PDF files are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const ext = file.name.split('.').pop() || 'pdf';
+      const filePath = `resumes/${user?.id || 'guest'}_${Date.now()}.${ext}`;
+
+      // Upload to Supabase Storage bucket 'resumes'
+      const { data, error } = await supabase.storage.from('resumes').upload(filePath, file, { upsert: true });
+
+      let finalUrl = '';
+      if (!error && data) {
+        const { data: publicUrlData } = supabase.storage.from('resumes').getPublicUrl(filePath);
+        finalUrl = publicUrlData.publicUrl;
+      } else {
+        // Fallback to Data URL
+        finalUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setFormData(prev => ({ ...prev, resume_url: finalUrl }));
+      setUploadFileName(file.name);
+      setUploadFileSize((file.size / (1024 * 1024)).toFixed(2) + ' MB');
+      toast.success(`Resume "${file.name}" uploaded successfully!`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload resume document.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Auto-calculate CGPA whenever semester scores change
   useEffect(() => {
@@ -168,9 +219,9 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
       }
 
       if (formData.resume_url) {
-        const driveRegex = /^https:\/\/(drive|docs)\.google\.com\/.+/i;
-        if (!driveRegex.test(formData.resume_url)) {
-          throw new Error('Please enter a valid Google Drive URL for your resume.');
+        const isValidUrl = formData.resume_url.startsWith('data:') || formData.resume_url.startsWith('http://') || formData.resume_url.startsWith('https://');
+        if (!isValidUrl) {
+          throw new Error('Please provide a valid uploaded file or URL for your resume.');
         }
       }
 
@@ -492,20 +543,83 @@ export default function StudentProfileForm({ initialData, onSave }: StudentProfi
               className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[var(--gold-medium)] bg-white/50"
             />
           </div>
-          <div className="space-y-1 md:col-span-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <ExternalLink className="w-4 h-4" /> Google Drive Resume Link (DOCX Format only)
-            </label>
-            <input
-              type="url"
-              placeholder="https://drive.google.com/file/d/..."
-              value={formData.resume_url}
-              onChange={e => setFormData({ ...formData, resume_url: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[var(--gold-medium)] bg-white/50"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Host your resume as a <strong>DOCX document</strong> on Google Drive. Make sure you set the link sharing options to <strong>&quot;Anyone with the link&quot;</strong> so recruiters and faculty can view it.
-            </p>
+          {/* Resume Upload Card */}
+          <div className="space-y-3 md:col-span-2 bg-[#fbfbfa] p-5 rounded-2xl border border-gray-200">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-[#111111] flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[var(--gold-medium)]" />
+                Upload Resume / Portfolio Document (DOCX or PDF)
+              </label>
+            </div>
+
+            {/* Direct File Upload Dropzone */}
+            <div className="relative border-2 border-dashed border-gray-300 hover:border-[var(--gold-medium)] transition-colors rounded-xl p-4 text-center bg-white">
+              <input
+                type="file"
+                accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+              
+              {isUploading ? (
+                <div className="flex flex-col items-center justify-center py-2 text-gray-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#111111] mb-1" />
+                  <span className="text-xs font-semibold">Uploading resume document...</span>
+                </div>
+              ) : formData.resume_url ? (
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-500 text-white rounded-lg">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-emerald-900 truncate max-w-xs">
+                        {uploadFileName || (formData.resume_url.toLowerCase().includes('.pdf') ? 'Resume.pdf' : 'Resume.docx')}
+                      </p>
+                      <p className="text-[10px] text-emerald-700 font-semibold">
+                        {uploadFileSize ? `${uploadFileSize} • Uploaded` : 'Document linked'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, resume_url: '' }));
+                      setUploadFileName('');
+                      setUploadFileSize('');
+                    }}
+                    className="text-xs font-bold text-red-600 hover:underline px-2 py-1 bg-white rounded border border-red-200"
+                  >
+                    Remove File
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-2">
+                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                  <p className="text-xs font-bold text-[#111111]">
+                    Click or Drag & Drop to upload your resume
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Supports <strong>DOCX</strong> or <strong>PDF</strong> formats
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Google Drive Link Fallback */}
+            <div className="pt-2">
+              <label className="text-xs font-semibold text-gray-500 flex items-center gap-1.5 mb-1">
+                <ExternalLink className="w-3.5 h-3.5" /> Or paste Google Drive / Document Link
+              </label>
+              <input
+                type="url"
+                placeholder="https://drive.google.com/file/d/..."
+                value={formData.resume_url}
+                onChange={e => setFormData({ ...formData, resume_url: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--gold-medium)] bg-white"
+              />
+            </div>
           </div>
         </div>
       </section>

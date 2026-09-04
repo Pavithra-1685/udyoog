@@ -9,15 +9,9 @@ import {
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
-import Groq from 'groq-sdk';
+import { createGroqChatCompletion } from '../../../lib/ai';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
-
-const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-const groq = new Groq({
-  apiKey: apiKey || '',
-  dangerouslyAllowBrowser: true,
-});
 
 interface Message {
   role: 'assistant' | 'user';
@@ -118,7 +112,7 @@ export default function InterviewPrep() {
     }
 
     try {
-      const chatCompletion = await groq.chat.completions.create({
+      const chatCompletion = await createGroqChatCompletion({
         messages: [
           {
             role: 'system',
@@ -203,13 +197,13 @@ export default function InterviewPrep() {
         5. Maintain a professional, highly encouraging yet realistic tone.`;
       }
 
-      const chatCompletion = await groq.chat.completions.create({
+      const chatCompletion = await createGroqChatCompletion({
         messages: [
           {
             role: 'system',
             content: systemContent
           },
-          ...messages.map(m => ({ role: m.role, content: m.content })),
+          ...messages.map(m => ({ role: m.role as 'assistant' | 'user' | 'system', content: m.content })),
           { role: 'user', content: userMessage }
         ],
         model: 'llama-3.3-70b-versatile',

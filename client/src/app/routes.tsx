@@ -17,6 +17,8 @@ import TalentPool from './pages/admin/TalentPool';
 import Jobs from './pages/admin/Jobs';
 import MappedCandidates from './pages/admin/MappedCandidates';
 import UserManagement from './pages/admin/UserManagement';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import NotFound from './pages/NotFound';
 import RoleGuard from './components/shared/RoleGuard';
 
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: LandingPage },
       { path: 'auth', Component: Auth },
+      { path: 'terms-of-service', Component: TermsOfService },
+      { path: 'privacy-policy', Component: PrivacyPolicy },
 
       // Admin-only routes
       { path: 'dashboard', element: <RoleGuard allowedRoles={['admin']}><Jobs /></RoleGuard> },

@@ -184,9 +184,9 @@ export default function FacultyStudentDetail() {
                       href={student.resume_url} 
                       target="_blank" 
                       className="px-3 py-1.5 bg-gray-50 text-[#111111] hover:bg-gray-100 rounded-lg border border-gray-200 transition-all flex items-center gap-1.5 text-xs font-bold shadow-sm"
-                      title="Google Drive Resume (DOCX)"
+                      title="Resume Document (DOCX / PDF)"
                     >
-                      <Briefcase className="w-4 h-4 text-[#111111] animate-pulse" /> Resume
+                      <Briefcase className="w-4 h-4 text-[#111111] animate-pulse" /> Resume (DOCX / PDF)
                     </a>
                   )}
                 </div>

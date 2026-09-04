@@ -464,10 +464,10 @@ export default function TalentPool() {
                               target="_blank" 
                               rel="noreferrer" 
                               className="px-2 py-0.5 bg-gray-50 text-[#111111] hover:bg-gray-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-0.5 border border-green-150 transition-all shadow-sm" 
-                              title="DOCX Resume Link"
+                              title="Resume Link (DOCX / PDF)"
                               onClick={e => e.stopPropagation()}
                             >
-                              <FileText className="w-3 h-3 text-[#111111]" /> Resume
+                              <FileText className="w-3 h-3 text-[#111111]" /> Resume (DOCX/PDF)
                             </a>
                           )}
                         </div>
@@ -486,11 +486,11 @@ export default function TalentPool() {
                       </div>
 
                       {/* Info & Mapping Controls */}
-                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold mt-4 pt-3 border-t border-gray-50">
-                        <div className="flex gap-2">
-                          <span>GPA: <strong className="text-[#111111] font-mono">{student.cgpa || '0.0'}</strong></span>
+                      <div className="flex justify-between items-center text-xs text-gray-400 font-bold mt-4 pt-3 border-t border-gray-100/80">
+                        <div className="flex items-center gap-1.5 font-medium text-gray-500">
+                          <span>GPA: <strong className="text-[#111111] font-mono font-bold">{student.cgpa || '0.0'}</strong></span>
                           <span>•</span>
-                          <span className="truncate max-w-[80px]">{student.branch || 'General'}</span>
+                          <span className="truncate max-w-[110px] font-semibold text-gray-600">{student.branch || 'General'}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -500,9 +500,11 @@ export default function TalentPool() {
                                   e.stopPropagation();
                                   handleUnmapCandidate(student.user_id, selectedJob.id);
                               }}
-                              className="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-extrabold uppercase tracking-tighter"
+                              className="px-3.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200/80 rounded-xl transition-all font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer"
+                              title="Remove candidate assignment"
                             >
-                              Remove
+                              <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                              <span>Remove</span>
                             </button>
                           ) : (
                             <button
@@ -512,9 +514,11 @@ export default function TalentPool() {
                                 else toast.info('Please select a job first.');
                               }}
                               disabled={!selectedJob}
-                              className="px-2.5 py-1 bg-gray-50 text-[#111111] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-extrabold uppercase tracking-tighter flex items-center gap-1"
+                              className="px-3.5 py-1.5 bg-[var(--gold-gradient)] text-[#111111] hover:opacity-95 border border-[var(--gold-medium)]/40 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition-all font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer"
+                              title="Map candidate to selected job"
                             >
-                              <PlusCircle className="w-3 h-3" /> Map
+                              <PlusCircle className="w-3.5 h-3.5 shrink-0 text-[#111111]" />
+                              <span>Map</span>
                             </button>
                           )}
                         </div>
@@ -640,9 +644,9 @@ export default function TalentPool() {
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="p-1.5 bg-gray-50 hover:bg-gray-100 text-[#111111] rounded-lg transition-all border border-gray-200 flex items-center gap-1 text-xs font-bold shadow-sm"
-                            title="Google Drive Resume (DOCX)"
+                            title="Resume Document (DOCX / PDF)"
                           >
-                            <FileText className="w-4 h-4 text-[#111111]" /> Resume (DOCX)
+                            <FileText className="w-4 h-4 text-[#111111]" /> Resume (DOCX / PDF)
                           </a>
                         )}
                       </div>
