@@ -28,6 +28,13 @@ export default function TalentPool() {
   // Active assignment selection state
   const [activeCandidateToAssign, setActiveCandidateToAssign] = useState<any | null>(null);
 
+  // Filter mode for talent pool view
+  const [filterMode, setFilterMode] = useState<'all' | 'mapped'>('all');
+
+  const mappedCountForSelectedJob = selectedJob 
+    ? mappings.filter(m => m.position_id === selectedJob.id).length 
+    : 0;
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -294,7 +301,23 @@ export default function TalentPool() {
     const branch = (s.branch || '').toLowerCase();
     const skillList = (s.skills || []).map((sk: any) => (typeof sk === 'string' ? sk : sk.name).toLowerCase()).join(' ');
     
-    return name.includes(query) || regNo.includes(query) || branch.includes(query) || skillList.includes(query);
+    const matchesQuery = name.includes(query) || regNo.includes(query) || branch.includes(query) || skillList.includes(query);
+    if (!matchesQuery) return false;
+
+    if (filterMode === 'mapped' && selectedJob) {
+      return mappings.some(m => m.student_id === s.user_id && m.position_id === selectedJob.id);
+    }
+    return true;
+  }).sort((a, b) => {
+    if (!selectedJob) return 0;
+    const aMapped = mappings.some(m => m.student_id === a.user_id && m.position_id === selectedJob.id);
+    const bMapped = mappings.some(m => m.student_id === b.user_id && m.position_id === selectedJob.id);
+    if (aMapped && !bMapped) return -1;
+    if (!aMapped && bMapped) return 1;
+    
+    const aScore = calculateMatch(a, selectedJob);
+    const bScore = calculateMatch(b, selectedJob);
+    return bScore - aScore;
   });
 
   return (
@@ -332,7 +355,7 @@ export default function TalentPool() {
                 </span>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-6 mb-8 flex items-start gap-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-6 mb-6 flex items-start gap-4">
                 <div className="p-2 bg-white rounded-xl shadow-sm">
                   <LayoutDashboard className="w-6 h-6 text-[#111111]" />
                 </div>
@@ -344,7 +367,7 @@ export default function TalentPool() {
                 </div>
               </div>
 
-              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-2 custom-scrollbar">
                 {activeJobs.map(job => {
                   const isSelected = selectedJob?.id === job.id;
                   const mappedCount = mappings.filter(m => m.position_id === job.id).length;
@@ -352,10 +375,13 @@ export default function TalentPool() {
                   return (
                     <div
                       key={job.id}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setFilterMode('all');
+                      }}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => handleDrop(e, job.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between mr-1 ${
                         isSelected 
                           ? 'border-[var(--gold-medium)] bg-[var(--gold-gradient)]/5 shadow-md shadow-[var(--gold-medium)]/5' 
                           : 'border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200'
@@ -367,7 +393,7 @@ export default function TalentPool() {
                             {job.companies?.company_name}
                           </span>
                           {mappedCount > 0 && (
-                            <span className="text-[9px] font-black bg-gray-50 text-[#111111] px-2 py-0.5 rounded border border-blue-100 uppercase font-mono">
+                            <span className="text-[9px] font-black bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 uppercase font-mono">
                               {mappedCount} Mapped
                             </span>
                           )}
@@ -401,21 +427,63 @@ export default function TalentPool() {
           {/* RIGHT COLUMN: Talent Directory & Search (Drag Sources) - span 8 */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Search Bar */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="relative w-full sm:max-w-md">
-                <input
-                  type="text"
-                  placeholder="Search student by name, skill, branch, or Roll No..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Search Bar & Registered Candidates Filter */}
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full sm:max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search student by name, skill, branch, or Roll No..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm transition-all"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setFilterMode('all')}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      filterMode === 'all'
+                        ? 'bg-[#111111] text-white shadow-sm'
+                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    All Talent ({students.length})
+                  </button>
+
+                  {selectedJob && (
+                    <button
+                      onClick={() => setFilterMode('mapped')}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        filterMode === 'mapped'
+                          ? 'bg-[var(--gold-medium)] text-white shadow-sm'
+                          : 'bg-amber-50 text-[var(--gold-medium)] hover:bg-amber-100 border border-[var(--gold-medium)]/30'
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Registered ({mappedCountForSelectedJob})</span>
+                    </button>
+                  )}
+                </div>
               </div>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 font-mono">
-                {filteredStudents.length} Students Listed
-              </span>
+
+              {selectedJob && (
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+                  <span className="text-gray-500 font-medium">
+                    Selected Role: <strong className="text-[#111111] font-bold">{selectedJob.role}</strong> ({selectedJob.companies?.company_name})
+                  </span>
+                  {mappedCountForSelectedJob > 0 && filterMode !== 'mapped' && (
+                    <button
+                      onClick={() => setFilterMode('mapped')}
+                      className="text-[var(--gold-medium)] font-bold hover:underline cursor-pointer flex items-center gap-1 text-[11px]"
+                    >
+                      Filter to {mappedCountForSelectedJob} Registered Candidate{mappedCountForSelectedJob > 1 ? 's' : ''} →
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Students List */}
@@ -434,7 +502,7 @@ export default function TalentPool() {
                       key={student.user_id}
                       className={`bg-white p-5 rounded-3xl border transition-all cursor-grab active:cursor-grabbing hover:shadow-lg flex flex-col justify-between ${
                         isAssignedToSelectedJob 
-                          ? 'border-gray-200 bg-gray-50/20' 
+                          ? 'border-emerald-300 bg-emerald-50/20 shadow-xs' 
                           : selectedStudent?.user_id === student.user_id
                             ? 'border-[var(--gold-medium)] shadow-md shadow-[var(--gold-medium)]/5'
                             : 'border-gray-100 hover:border-gray-200'
@@ -442,6 +510,18 @@ export default function TalentPool() {
                       onClick={() => setSelectedStudent(student)}
                     >
                       <div>
+                        {isAssignedToSelectedJob && selectedJob && (
+                          <div className="mb-3 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-2xl flex items-center justify-between text-xs text-emerald-800 font-bold">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span className="truncate">Registered for {selectedJob.role}</span>
+                            </div>
+                            <span className="text-[9px] uppercase tracking-wider bg-emerald-100/80 text-emerald-800 px-2 py-0.5 rounded-md font-mono shrink-0 ml-1">
+                              Mapped
+                            </span>
+                          </div>
+                        )}
+
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-[#111111]/10 rounded-2xl flex items-center justify-center font-bold text-lg text-[#111111] shadow-inner">
