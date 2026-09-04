@@ -198,6 +198,14 @@
   .glass-dark {
     @apply backdrop-blur-xl bg-black/40 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
+
+  .bg-gold-gradient {
+    background: var(--gold-gradient) !important;
+  }
+
+  .bg-gold-medium {
+    background-color: var(--gold-medium) !important;
+  }
 }
 
 

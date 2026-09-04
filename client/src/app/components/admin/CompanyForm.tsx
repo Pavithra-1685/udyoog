@@ -478,7 +478,8 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
             <button
               type="submit"
               form="company-form"
-              className="px-8 py-2.5 bg-[var(--gold-gradient)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-all flex items-center gap-2"
+              className="px-8 py-2.5 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
+              style={{ background: 'var(--gold-gradient)' }}
             >
               {isJobOnly ? 'Add Job Roles' : company ? 'Update Company' : 'Save Company Record'}
             </button>
