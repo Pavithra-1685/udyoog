@@ -277,8 +277,8 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
                       e.stopPropagation();
                       navigate(`/company/${company.id}`);
                     }}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 shadow-md"
-                    style={{ backgroundColor: '#111111' }}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white transition-all hover:opacity-90 shadow-md font-bold"
+                    style={{ backgroundColor: 'var(--gold-medium)' }}
                   >
                     Deep Dive
                     <ArrowRight className="w-4 h-4" />
