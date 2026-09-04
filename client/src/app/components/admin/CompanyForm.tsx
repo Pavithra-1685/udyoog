@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { X, Plus, Trash2, Briefcase, MapPin, IndianRupee, Clock, FileText, Users, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
+import { X, Plus, Trash2, Briefcase, MapPin, IndianRupee, Clock, FileText, Users, Sparkles, Building2, ChevronDown } from 'lucide-react';
 import type { Company, Position } from './CompanyCard';
 
 interface CompanyFormProps {
@@ -12,6 +13,7 @@ interface CompanyFormProps {
 }
 
 export default function CompanyForm({ company, existingCompanies, isJobOnly, onClose, onSubmit }: CompanyFormProps) {
+  const [mounted, setMounted] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState(company?.id || '');
   const [companyName, setCompanyName] = useState(company?.company_name || '');
   const [stage, setStage] = useState(company?.stage || 'initiation');
@@ -32,6 +34,17 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
   // Initial Activity Fields (Only for new companies)
   const [activityText, setActivityText] = useState('');
   const [actionOwner, setActionOwner] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      setMounted(false);
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  if (!mounted) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,353 +94,398 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
     setPositions(updated);
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="backdrop-blur-lg bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sticky top-0 bg-white/90 backdrop-blur-lg border-b border-gray-100 p-6 flex items-center justify-between z-10">
-          <div>
-            <h2 className="text-2xl font-bold text-[#111111]">
-              {isJobOnly ? 'Add New Job Roles' : company ? 'Edit Company Profile' : 'Initialize New Company'}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {isJobOnly ? 'Expanding opportunities for existing clients' : 'Corporate Engagement & Job Management'}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6 text-[#111111]" />
-          </button>
-        </div>
+  return createPortal(
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-md"
+        />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
-          
-          {isJobOnly ? (
-            <div className="space-y-6">
-               <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-                <Users className="w-4 h-4" />
-                Select Existing Company
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-[#111111]">Company Name</label>
-                <select
-                  value={selectedCompanyId}
-                  onChange={(e) => setSelectedCompanyId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none appearance-none cursor-pointer bg-white transition-all"
-                  required
-                >
-                  <option value="">Choose a company...</option>
-                  {existingCompanies?.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-                {!existingCompanies?.length && (
-                  <p className="text-xs text-red-500 mt-1 font-bold italic">No companies available. Please create a company first.</p>
+        {/* Form Container */}
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 15 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 15 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+          className="relative w-full max-w-4xl max-h-[88vh] bg-white rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col z-[10000] my-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-6 py-5 bg-white border-b border-gray-100 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-xs flex items-center justify-center">
+                {isJobOnly ? (
+                  <Briefcase className="w-6 h-6 text-[var(--gold-medium)]" />
+                ) : (
+                  <Building2 className="w-6 h-6 text-[var(--gold-medium)]" />
                 )}
               </div>
-            </div>
-          ) : (
-            <>
-              {/* Section 1: Basic Company Info */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-                  <Plus className="w-4 h-4" />
-                  Core Information
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Client Name / Company</label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                      placeholder="e.g. Google India"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Official Website</label>
-                    <input
-                      type="url"
-                      value={companyWebsite}
-                      onChange={(e) => setCompanyWebsite(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Engagement Stage</label>
-                    <select
-                      value={stage}
-                      onChange={(e) => setStage(e.target.value as any)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none appearance-none cursor-pointer bg-white transition-all"
-                    >
-                      <option value="initiation">Initiation</option>
-                      <option value="planning">Planning</option>
-                      <option value="execution">Execution</option>
-                      <option value="monitoring">Monitoring</option>
-                      <option value="closure">Closure</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Priority Status</label>
-                    <select
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value as any)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none appearance-none cursor-pointer bg-white transition-all"
-                    >
-                      <option value="high">High Priority</option>
-                      <option value="medium">Medium Priority</option>
-                      <option value="low">Low Priority</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 2: Contact Person */}
-              <div className="space-y-6 pt-6 border-t border-gray-100">
-                <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-                  <Users className="w-4 h-4" />
-                  Primary Contact
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Full Name</label>
-                    <input
-                      type="text"
-                      value={primaryContactName}
-                      onChange={(e) => setPrimaryContactName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Email Address</label>
-                    <input
-                      type="email"
-                      value={primaryEmail}
-                      onChange={(e) => setPrimaryEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-[#111111]">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={primaryPhone}
-                      onChange={(e) => setPrimaryPhone(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Section 3: Action Items (Locked to Today) */}
-          <div className="space-y-6 pt-6 border-t border-gray-100 bg-gray-50/50 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-              <Clock className="w-4 h-4" />
-              Scheduling & Next Action
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-bold text-[#111111]">Action Date</label>
-                <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 font-bold flex items-center gap-2">
-                   <Clock className="w-4 h-4 text-[var(--gold-medium)]" />
-                   {today}
-                </div>
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-sm font-bold text-[#111111]">Action Item Description</label>
-                <input
-                  type="text"
-                  value={actionItem}
-                  onChange={(e) => setActionItem(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                  placeholder="e.g. Schedule first round of interviews"
-                />
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                  {isJobOnly ? 'Add Job Roles to Company' : company ? 'Edit Company Profile' : 'Initialize New Company'}
+                </h2>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  {isJobOnly ? 'Expand active opportunities for registered partners' : 'Corporate Engagement & Talent Management'}
+                </p>
               </div>
             </div>
+            
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-full transition-colors"
+              title="Close Modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Section 4: Jobs Management */}
-          <div className="space-y-6 pt-6 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-                <Briefcase className="w-4 h-4" />
-                Job Roles
+          {/* Scrollable Form Content */}
+          <form id="company-form" onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
+            
+            {isJobOnly ? (
+              <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-4">
+                <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider">
+                  <Users className="w-4 h-4" />
+                  Target Company Selection
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-bold text-gray-900">Select Company <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <select
+                      value={selectedCompanyId}
+                      onChange={(e) => setSelectedCompanyId(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none appearance-none cursor-pointer bg-white font-medium text-gray-800 transition-all shadow-xs pr-10"
+                      required
+                    >
+                      <option value="">Choose a company from existing records...</option>
+                      {existingCompanies?.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                  {!existingCompanies?.length && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold italic">No active companies found. Please create a company first.</p>
+                  )}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={addPosition}
-                className="flex items-center gap-2 px-4 py-2 bg-[#111111] text-white rounded-xl text-sm font-bold hover:opacity-90 shadow-md transition-all"
-              >
-                <Plus className="w-4 h-4" /> Add Job
-              </button>
-            </div>
-
-            <div className="grid gap-6">
-              {positions.map((pos, idx) => (
-                <div key={idx} className="relative p-6 bg-white border-2 border-gray-100 rounded-3xl hover:border-[var(--gold-medium)]/30 transition-all">
-                  <button
-                    type="button"
-                    onClick={() => removePosition(idx)}
-                    className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+            ) : (
+              <>
+                {/* Section 1: Core Company Info */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider border-b border-gray-100 pb-2">
+                    <Building2 className="w-4 h-4" />
+                    Core Company Details
+                  </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Job Title</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Company Name <span className="text-red-500">*</span></label>
                       <input
                         type="text"
-                        value={pos.role}
-                        onChange={(e) => updatePosition(idx, 'role', e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[var(--gold-medium)]"
-                        placeholder="e.g. Frontend Intern"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                        placeholder="e.g. Google India"
                         required
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Status</label>
-                      <select
-                        value={pos.status}
-                        onChange={(e) => updatePosition(idx, 'status', e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[var(--gold-medium)] appearance-none cursor-pointer"
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Official Website</label>
+                      <input
+                        type="url"
+                        value={companyWebsite}
+                        onChange={(e) => setCompanyWebsite(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                        placeholder="https://company.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Engagement Stage</label>
+                      <div className="relative">
+                        <select
+                          value={stage}
+                          onChange={(e) => setStage(e.target.value as any)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none appearance-none cursor-pointer bg-white font-medium text-gray-800 transition-all shadow-xs pr-10"
+                        >
+                          <option value="initiation">Initiation</option>
+                          <option value="planning">Planning</option>
+                          <option value="execution">Execution</option>
+                          <option value="monitoring">Monitoring</option>
+                          <option value="closure">Closure</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Priority Level</label>
+                      <div className="relative">
+                        <select
+                          value={priority}
+                          onChange={(e) => setPriority(e.target.value as any)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none appearance-none cursor-pointer bg-white font-medium text-gray-800 transition-all shadow-xs pr-10"
+                        >
+                          <option value="high">High Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="low">Low Priority</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Contact Person */}
+                <div className="space-y-5 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider border-b border-gray-100 pb-2">
+                    <Users className="w-4 h-4" />
+                    Primary Contact Information
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Contact Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={primaryContactName}
+                        onChange={(e) => setPrimaryContactName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                        placeholder="e.g. Jane Doe"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Email Address <span className="text-red-500">*</span></label>
+                      <input
+                        type="email"
+                        value={primaryEmail}
+                        onChange={(e) => setPrimaryEmail(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                        placeholder="jane@company.com"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-bold text-gray-900">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={primaryPhone}
+                        onChange={(e) => setPrimaryPhone(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                        placeholder="+91 9876543210"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Section 3: Action Items */}
+            <div className="space-y-4 bg-gray-50/80 border border-gray-200/70 p-5 rounded-2xl">
+              <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider">
+                <Clock className="w-4 h-4" />
+                Scheduling & Next Action Item
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">Action Date</label>
+                  <div className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold flex items-center gap-2 shadow-xs text-sm">
+                    <Clock className="w-4 h-4 text-[var(--gold-medium)] shrink-0" />
+                    {today}
+                  </div>
+                </div>
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider">Action Description</label>
+                  <input
+                    type="text"
+                    value={actionItem}
+                    onChange={(e) => setActionItem(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs text-sm"
+                    placeholder="e.g. Follow up on interview shortlists"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Jobs Management */}
+            <div className="space-y-5 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider">
+                  <Briefcase className="w-4 h-4" />
+                  Job Openings ({positions.length})
+                </div>
+                <button
+                  type="button"
+                  onClick={addPosition}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#111111] text-white rounded-xl text-xs font-bold hover:bg-gray-800 shadow-xs transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add Role
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {positions.map((pos, idx) => (
+                  <div key={idx} className="p-5 bg-white border border-gray-200/80 rounded-2xl shadow-xs space-y-4 hover:border-[var(--gold-medium)]/40 transition-all">
+                    {/* Role Header Bar */}
+                    <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-sm text-gray-900">
+                          {pos.role || 'New Opportunity'}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removePosition(idx)}
+                        className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 font-semibold border border-red-200/60"
+                        title="Remove role"
                       >
-                        <option value="open">Open</option>
-                        <option value="hold">Hold</option>
-                        <option value="close">Closed</option>
-                      </select>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </button>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Job Title <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={pos.role}
+                          onChange={(e) => updatePosition(idx, 'role', e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm font-medium text-gray-900"
+                          placeholder="e.g. Software Engineer Intern"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Opening Status</label>
+                        <div className="relative">
+                          <select
+                            value={pos.status}
+                            onChange={(e) => updatePosition(idx, 'status', e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-[var(--gold-medium)] outline-none appearance-none cursor-pointer text-sm font-medium text-gray-900 pr-9"
+                          >
+                            <option value="open">Open</option>
+                            <option value="hold">On Hold</option>
+                            <option value="close">Closed</option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" /> Location
+                        </label>
+                        <input
+                          type="text"
+                          value={pos.location}
+                          onChange={(e) => updatePosition(idx, 'location', e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm font-medium text-gray-900"
+                          placeholder="e.g. Bangalore / Remote"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                          <IndianRupee className="w-3.5 h-3.5 text-gray-400" /> Stipend / CTC
+                        </label>
+                        <input
+                          type="text"
+                          value={pos.salary}
+                          onChange={(e) => updatePosition(idx, 'salary', e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm font-medium text-gray-900"
+                          placeholder="e.g. ₹25,000/mo or 8 LPA"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> Priority Location
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5 text-gray-400" /> Description
                       </label>
-                      <input
-                        type="text"
-                        value={pos.location}
-                        onChange={(e) => updatePosition(idx, 'location', e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[var(--gold-medium)]"
-                        placeholder="e.g. Bangalore (Manual Entry)"
+                      <textarea
+                        value={pos.description}
+                        onChange={(e) => updatePosition(idx, 'description', e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:bg-white focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm font-medium text-gray-900 resize-none"
+                        rows={2}
+                        placeholder="Key responsibilities and qualifications required..."
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter flex items-center gap-1">
-                        <IndianRupee className="w-3 h-3" /> Stipend / Salary
-                      </label>
-                      <input
-                        type="text"
-                        value={pos.salary}
-                        onChange={(e) => updatePosition(idx, 'salary', e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[var(--gold-medium)]"
-                        placeholder="e.g. 25k/mo or 8 LPA"
-                      />
-                    </div>
                   </div>
+                ))}
+                {positions.length === 0 && (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 text-sm">
+                    No active job roles specified. Click "Add Role" above to attach opportunities.
+                  </div>
+                )}
+              </div>
+            </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-tighter flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> Job Description
-                    </label>
-                    <textarea
-                      value={pos.description}
-                      onChange={(e) => updatePosition(idx, 'description', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[var(--gold-medium)] resize-none"
-                      rows={2}
-                      placeholder="Briefly describe the role..."
+            {/* Section 5: Initial Activity (Only for new companies) */}
+            {!company && !isJobOnly && (
+              <div className="space-y-5 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-xs uppercase tracking-wider border-b border-gray-100 pb-2">
+                  <Sparkles className="w-4 h-4" />
+                  Initial Activity Log
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-gray-900">Activity Summary</label>
+                    <input
+                      type="text"
+                      value={activityText}
+                      onChange={(e) => setActivityText(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                      placeholder="e.g. Initial reach out call completed"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-bold text-gray-900">Action Owner</label>
+                    <input
+                      type="text"
+                      value={actionOwner}
+                      onChange={(e) => setActionOwner(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none font-medium text-gray-800 transition-all shadow-xs"
+                      placeholder="e.g. Admin / HR Lead"
                     />
                   </div>
                 </div>
-              ))}
-              {positions.length === 0 && (
-                <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400">
-                  No job roles added yet.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Section 5: Initial Activity (Only for new companies) */}
-          {!company && !isJobOnly && (
-            <div className="space-y-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-[var(--gold-medium)] font-bold text-sm uppercase tracking-widest">
-                <Sparkles className="w-4 h-4" />
-                Quick Activity Log
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-[#111111]">Activity Detail</label>
-                  <input
-                    type="text"
-                    value={activityText}
-                    onChange={(e) => setActivityText(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                    placeholder="e.g. Initial reach out email sent"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-bold text-[#111111]">Action Owner</label>
-                  <input
-                    type="text"
-                    value={actionOwner}
-                    onChange={(e) => setActionOwner(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none transition-all"
-                    placeholder="Admin Name"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </form>
 
-          {/* Form Actions */}
-          <div className="flex items-center gap-4 pt-8 sticky bottom-0 bg-white py-4 border-t border-gray-100">
-            <button
-              type="submit"
-              className="flex-1 py-4 bg-[var(--gold-gradient)] text-white rounded-2xl font-bold text-lg shadow-xl shadow-[var(--gold-gradient)]/20 hover:opacity-90 transition-all"
-            >
-              {isJobOnly ? 'Add Job Roles' : company ? 'Update Record' : 'Save Company & Jobs'}
-            </button>
+          {/* Sticky Footer Bar */}
+          <div className="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-8 py-4 border-2 border-gray-200 rounded-2xl font-bold text-[#111111] hover:bg-gray-50 transition-all"
+              className="px-6 py-2.5 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all text-sm"
             >
               Cancel
             </button>
+            <button
+              type="submit"
+              form="company-form"
+              className="px-8 py-2.5 bg-[var(--gold-gradient)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-all flex items-center gap-2"
+            >
+              {isJobOnly ? 'Add Job Roles' : company ? 'Update Company' : 'Save Company Record'}
+            </button>
           </div>
-        </form>
-      </motion.div>
-    </motion.div>
+        </motion.div>
+      </div>
+    </AnimatePresence>,
+    document.body
   );
 }
-
-
-
-
