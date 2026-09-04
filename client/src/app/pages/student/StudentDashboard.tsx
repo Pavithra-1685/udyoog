@@ -27,15 +27,35 @@ export default function StudentDashboard() {
     }
 
     try {
-      const { error } = await supabase
+      let validMappedBy: string | null = null;
+      if (profile?.user_id) {
+        const { data: profileCheck } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('user_id', profile.user_id)
+          .maybeSingle();
+        if (profileCheck) validMappedBy = profile.user_id;
+      }
+
+      const insertPayload: any = {
+        student_id: profile.user_id,
+        position_id: jobId,
+        status: 'applied',
+        mapped_by_role: 'student'
+      };
+      if (validMappedBy) insertPayload.mapped_by = validMappedBy;
+
+      let { error } = await supabase
         .from('mapped_candidates')
-        .insert([{
-          student_id: profile.user_id,
-          position_id: jobId,
-          status: 'applied',
-          mapped_by: profile.user_id,
-          mapped_by_role: 'student'
-        }]);
+        .insert([insertPayload]);
+
+      if (error && (error.message?.includes('mapped_by_fkey') || error.code === '23503')) {
+        delete insertPayload.mapped_by;
+        const retry = await supabase
+          .from('mapped_candidates')
+          .insert([insertPayload]);
+        error = retry.error;
+      }
 
       if (error) throw error;
       toast.success('Successfully applied! Your profile has been shared with recruiters.');

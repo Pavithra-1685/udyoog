@@ -74,15 +74,35 @@ export default function FacultyStudentDetail() {
     if (!student || !userId) return;
     setIsMappingLoading(true);
     try {
-      const { error } = await supabase
+      let validMappedBy: string | null = null;
+      if (userId) {
+        const { data: profileCheck } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (profileCheck) validMappedBy = userId;
+      }
+
+      const insertPayload: any = {
+        student_id: student.user_id,
+        position_id: positionId,
+        status: 'mapped',
+        mapped_by_role: userRole || 'faculty'
+      };
+      if (validMappedBy) insertPayload.mapped_by = validMappedBy;
+
+      let { error } = await supabase
         .from('mapped_candidates')
-        .insert([{
-          student_id: student.user_id,
-          position_id: positionId,
-          status: 'mapped',
-          mapped_by: userId,
-          mapped_by_role: userRole
-        }]);
+        .insert([insertPayload]);
+
+      if (error && (error.message?.includes('mapped_by_fkey') || error.code === '23503')) {
+        delete insertPayload.mapped_by;
+        const retry = await supabase
+          .from('mapped_candidates')
+          .insert([insertPayload]);
+        error = retry.error;
+      }
 
       if (error) throw error;
       toast.success('Successfully mapped candidate to job!');
