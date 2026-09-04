@@ -170,8 +170,8 @@ export default function ActivityForm({ companyId, companyName, onClose, onSubmit
             <button
               type="submit"
               form="activity-form"
-              className="px-8 py-2.5 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-all cursor-pointer"
-              style={{ background: 'var(--gold-gradient)' }}
+              className="px-8 py-2.5 text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-all cursor-pointer"
+              style={{ backgroundColor: 'var(--gold-medium)' }}
             >
               Save Activity Log
             </button>

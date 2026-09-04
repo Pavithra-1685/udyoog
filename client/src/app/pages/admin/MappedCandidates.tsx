@@ -622,8 +622,8 @@ export default function MappedCandidates() {
               <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50/50 shrink-0">
                 <button
                   onClick={() => setSelectedJobForModal(null)}
-                  className="px-6 py-2.5 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-md cursor-pointer"
-                  style={{ background: 'var(--gold-gradient)' }}
+                  className="px-6 py-2.5 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-md cursor-pointer"
+                  style={{ backgroundColor: 'var(--gold-medium)' }}
                 >
                   Close Pipeline
                 </button>

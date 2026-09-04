@@ -790,8 +790,8 @@ export default function TalentPool() {
                     ) : (
                       <button
                         onClick={() => handleMapCandidate(selectedStudent.user_id, selectedJob.id)}
-                        className="px-5 py-2.5 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-xs shadow-md hover:opacity-90 transition-all uppercase flex items-center gap-1.5 cursor-pointer"
-                        style={{ background: 'var(--gold-gradient)' }}
+                        className="px-5 py-2.5 text-white rounded-xl font-bold text-xs shadow-md hover:opacity-90 transition-all uppercase flex items-center gap-1.5 cursor-pointer"
+                        style={{ backgroundColor: 'var(--gold-medium)' }}
                       >
                         <UserCheck className="w-4 h-4" /> Map Candidate to Job
                       </button>

@@ -664,8 +664,8 @@ export default function Jobs() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 py-3 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-sm shadow-md hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer"
-                    style={{ background: 'var(--gold-gradient)' }}
+                    className="flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer"
+                    style={{ backgroundColor: 'var(--gold-medium)' }}
                   >
                     {isSubmitting ? 'Saving...' : (editingJob ? 'Update Job Details' : 'Save & Publish')}
                   </button>

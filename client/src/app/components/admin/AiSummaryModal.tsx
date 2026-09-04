@@ -251,8 +251,8 @@ export default function AiSummaryModal({
 
               <button
                 onClick={onClose}
-                className="px-6 py-2 rounded-xl text-white font-bold text-sm bg-[var(--gold-medium)] transition-all hover:opacity-90 shadow-md cursor-pointer"
-                style={{ background: 'var(--gold-gradient)' }}
+                className="px-6 py-2 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90 shadow-md cursor-pointer"
+                style={{ backgroundColor: 'var(--gold-medium)' }}
               >
                 Close
               </button>
