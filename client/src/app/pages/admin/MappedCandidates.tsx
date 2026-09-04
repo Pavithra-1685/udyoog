@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, User, Briefcase, Trash2, ArrowUpRight, CheckCircle2, AlertCircle, RefreshCw, Filter, Search, Users, X, MapPin } from 'lucide-react';
@@ -81,6 +82,17 @@ export default function MappedCandidates() {
     };
     init();
   }, [navigate]);
+
+  useEffect(() => {
+    if (selectedJobForModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedJobForModal]);
 
   // Combine data whenever mappings, students, or jobs change
   useEffect(() => {
@@ -473,24 +485,27 @@ export default function MappedCandidates() {
       </main>
 
       {/* Candidate Mappings details Overlay Modal */}
-      <AnimatePresence>
-        {selectedJobForModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedJobForModal(null)}
-          >
+      {selectedJobForModal && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedJobForModal(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative w-full max-w-4xl max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col z-[10000] my-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
                 <div>
                   <span className="text-[10px] px-2.5 py-0.5 bg-[var(--gold-gradient)]/5 text-[var(--gold-medium)] border border-[var(--gold-medium)]/20 rounded font-black uppercase tracking-wider">
                     {selectedJobForModal.companies?.company_name}
@@ -509,7 +524,7 @@ export default function MappedCandidates() {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 overflow-y-auto flex-1">
+              <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                 {(() => {
                   const jobMappings = combinedData.filter(m => m.position_id === selectedJobForModal.id);
                   return jobMappings.length > 0 ? (
@@ -604,7 +619,7 @@ export default function MappedCandidates() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50/50">
+              <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50/50 shrink-0">
                 <button
                   onClick={() => setSelectedJobForModal(null)}
                   className="px-6 py-2.5 bg-[#111111] text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-md"
@@ -613,9 +628,10 @@ export default function MappedCandidates() {
                 </button>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
 
       <Toaster position="top-right" />
     </div>

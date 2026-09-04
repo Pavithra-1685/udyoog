@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Search, User, Target, ChevronRight, Filter, Star, Zap, GraduationCap, MapPin, Briefcase, IndianRupee, Layers, Check, Sparkles, X, PlusCircle, UserCheck, Github, Linkedin, LayoutDashboard, FileText, Trash2 } from 'lucide-react';
@@ -90,6 +91,17 @@ export default function TalentPool() {
     };
     init();
   }, [navigate, urlJobId]);
+
+  useEffect(() => {
+    if (selectedStudent && selectedJob) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedStudent, selectedJob]);
 
   const calculateMatch = (student: any, job: any) => {
     if (!student || !job) return 0;
@@ -536,34 +548,43 @@ export default function TalentPool() {
         </div>
 
         {/* SIDE-BY-SIDE DRAP/MODAL DRAWER: COMPARISON SCREEN */}
-        <AnimatePresence>
-          {selectedJob && selectedStudent && (
-            <motion.div
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 100 }}
-              className="fixed bottom-0 left-0 right-0 z-50 p-4 max-w-7xl mx-auto"
-            >
-              <div className="backdrop-blur-xl bg-white/95 border-2 border-[#111111]/10 rounded-3xl shadow-2xl overflow-hidden max-h-[75vh] flex flex-col">
-                
+        {selectedJob && selectedStudent && createPortal(
+          <AnimatePresence>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedStudent(null)}
+                className="fixed inset-0 bg-black/60 backdrop-blur-md"
+              />
+              
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="relative w-full max-w-6xl max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col z-[10000] my-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {/* Header */}
-                <div className="p-4 bg-[#111111] text-white flex items-center justify-between">
+                <div className="p-4 sm:p-5 bg-[#111111] text-white flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-[var(--gold-medium)]" />
                     <span className="font-extrabold text-sm uppercase tracking-widest">Side-By-Side Smart Match Profile</span>
                   </div>
                   
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase text-[var(--gold-medium)] tracking-wider">Smart match compatibility score</span>
-                      <span className="bg-gray-500 text-white font-black text-xs px-3 py-1 rounded-full font-mono">
-                        {calculateMatch(selectedStudent, selectedJob)}% Correct Match
+                      <span className="text-[10px] font-black uppercase text-[var(--gold-medium)] tracking-wider hidden sm:inline">Smart match compatibility score</span>
+                      <span className="bg-gray-800 text-white font-black text-xs px-3 py-1 rounded-full font-mono border border-gray-700">
+                        {calculateMatch(selectedStudent, selectedJob)}% Match
                       </span>
                     </div>
 
                     <button
                       onClick={() => setSelectedStudent(null)}
-                      className="p-1 hover:bg-white/10 rounded-full transition-colors text-white"
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-white"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -571,13 +592,13 @@ export default function TalentPool() {
                 </div>
 
                 {/* Content - Side-by-Side columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 overflow-y-auto p-6 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 overflow-y-auto p-6 gap-6 flex-1 custom-scrollbar">
                   
                   {/* Left Side: Job opening info */}
                   <div className="space-y-4 pr-0 md:pr-4">
                     <div className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-wider">
                       <Briefcase className="w-4.5 h-4.5 text-[var(--gold-medium)]" />
-                      Job Opportunity details
+                      Job Opportunity Details
                     </div>
 
                     <div>
@@ -587,7 +608,7 @@ export default function TalentPool() {
                       <h4 className="text-2xl font-black text-[#111111]">{selectedJob.role}</h4>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-xs font-bold text-gray-500 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                    <div className="grid grid-cols-2 gap-4 text-xs font-bold text-gray-500 bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
                         <span>{selectedJob.location || 'Remote'}</span>
@@ -646,7 +667,7 @@ export default function TalentPool() {
                             className="p-1.5 bg-gray-50 hover:bg-gray-100 text-[#111111] rounded-lg transition-all border border-gray-200 flex items-center gap-1 text-xs font-bold shadow-sm"
                             title="Resume Document (DOCX / PDF)"
                           >
-                            <FileText className="w-4 h-4 text-[#111111]" /> Resume (DOCX / PDF)
+                            <FileText className="w-4 h-4 text-[#111111]" /> Resume
                           </a>
                         )}
                       </div>
@@ -665,7 +686,7 @@ export default function TalentPool() {
                     </div>
 
                     {/* CGPA, Hometown and Preferred Location */}
-                    <div className="grid grid-cols-3 gap-3 text-xs font-bold bg-gray-50/20 p-3 rounded-2xl border border-blue-100/30">
+                    <div className="grid grid-cols-3 gap-3 text-xs font-bold bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
                       <div>
                         <span className="text-gray-400 text-[8px] uppercase tracking-wider block">CGPA</span>
                         <span className="text-sm text-[#111111] font-black block mt-0.5 font-mono">{selectedStudent.cgpa || '0.00'}</span>
@@ -694,7 +715,7 @@ export default function TalentPool() {
                           const name = typeof skill === 'string' ? skill : skill.name;
                           const level = typeof skill === 'object' ? skill.level : '';
                           return (
-                            <span key={name} className="px-2.5 py-0.5 bg-gray-50 text-[#111111] border border-green-100 text-[9px] font-bold rounded-full uppercase flex items-center gap-1 shadow-sm font-outfit">
+                            <span key={name} className="px-2.5 py-0.5 bg-gray-50 text-[#111111] border border-gray-200 text-[9px] font-bold rounded-full uppercase flex items-center gap-1 shadow-xs font-outfit">
                               {name} {level && <span className="opacity-50 text-[7px]">({level})</span>}
                             </span>
                           );
@@ -712,13 +733,13 @@ export default function TalentPool() {
                         (() => {
                           const recentProj = selectedStudent.projects[selectedStudent.projects.length - 1];
                           return (
-                            <div className="p-3 bg-gray-50/80 rounded-2xl border border-gray-100/50 space-y-1.5 shadow-sm">
+                            <div className="p-3 bg-gray-50/80 rounded-2xl border border-gray-100/50 space-y-1.5 shadow-xs">
                               <h5 className="font-extrabold text-xs text-[#111111]">{recentProj.name}</h5>
                               <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2">{recentProj.description}</p>
                               {recentProj.tech && recentProj.tech.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
                                   {recentProj.tech.map((t: string) => (
-                                    <span key={t} className="px-1.5 py-0.5 bg-gray-50 text-[#111111] text-[8px] font-black uppercase rounded">
+                                    <span key={t} className="px-1.5 py-0.5 bg-gray-100 text-[#111111] text-[8px] font-black uppercase rounded">
                                       {t}
                                     </span>
                                   ))}
@@ -735,7 +756,7 @@ export default function TalentPool() {
                 </div>
 
                 {/* Footer mapping controls */}
-                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
                   <button
                     onClick={() => {
                       setSelectedStudent(null);
@@ -746,14 +767,14 @@ export default function TalentPool() {
                     View Complete Portfolio <ChevronRight className="w-3.5 h-3.5" />
                   </button>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
                     {userRole === 'admin' && (
                       <button
                         onClick={async () => {
                           await handleAdminDeleteStudent(selectedStudent);
                           setSelectedStudent(null);
                         }}
-                        className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-xl font-bold text-xs shadow-md shadow-red-600/10 transition-all uppercase flex items-center gap-1.5"
+                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white border border-red-700 rounded-xl font-bold text-xs shadow-sm transition-all uppercase flex items-center gap-1.5"
                       >
                         <Trash2 className="w-4 h-4" /> Delete Student
                       </button>
@@ -762,30 +783,31 @@ export default function TalentPool() {
                     {mappings.some(m => m.student_id === selectedStudent.user_id && m.position_id === selectedJob.id) ? (
                       <button
                         onClick={() => handleUnmapCandidate(selectedStudent.user_id, selectedJob.id)}
-                        className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs shadow-md shadow-red-600/10 hover:bg-red-700 transition-all uppercase"
+                        className="px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs shadow-sm hover:bg-red-700 transition-all uppercase"
                       >
                         Unmap Candidate
                       </button>
                     ) : (
                       <button
                         onClick={() => handleMapCandidate(selectedStudent.user_id, selectedJob.id)}
-                        className="px-6 py-2.5 bg-[var(--gold-gradient)] text-white rounded-xl font-bold text-xs shadow-md shadow-[var(--gold-medium)]/10 hover:opacity-90 transition-all uppercase flex items-center gap-1.5"
+                        className="px-5 py-2.5 bg-[var(--gold-gradient)] text-white rounded-xl font-bold text-xs shadow-md hover:opacity-90 transition-all uppercase flex items-center gap-1.5"
                       >
                         <UserCheck className="w-4 h-4" /> Map Candidate to Job
                       </button>
                     )}
                     <button
                       onClick={() => setSelectedStudent(null)}
-                      className="px-4 py-2.5 border-2 border-gray-200 text-gray-500 rounded-xl font-bold text-xs hover:bg-gray-100 transition-all"
+                      className="px-4 py-2.5 border border-gray-300 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-100 transition-all"
                     >
-                      Close Comparison
+                      Close
                     </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            </div>
+          </AnimatePresence>,
+          document.body
+        )}
 
       </main>
       <Toaster position="top-right" />

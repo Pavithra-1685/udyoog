@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Briefcase, MapPin, IndianRupee, Search, Plus, Edit2, Trash2, UserPlus, FileText, ChevronRight, X, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -166,6 +167,17 @@ export default function Jobs() {
     };
     init();
   }, [navigate]);
+
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showForm]);
 
   const openCreateModal = () => {
     setEditingJob(null);
@@ -543,23 +555,25 @@ export default function Jobs() {
       </main>
 
       {/* CREATE & EDIT FORM MODAL */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowForm(false)}
-          >
+      {showForm && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowForm(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden"
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-gray-200/80 overflow-hidden flex flex-col z-[10000] my-auto max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                 <h3 className="text-xl font-bold text-[#111111]">
                   {editingJob ? 'Edit Job Opening' : 'List New Job Role'}
                 </h3>
@@ -571,7 +585,7 @@ export default function Jobs() {
                 </button>
               </div>
 
-              <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Select Company</label>
                   <select
@@ -664,9 +678,10 @@ export default function Jobs() {
                 </div>
               </form>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
 
       <Toaster position="top-right" />
     </div>
