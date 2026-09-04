@@ -28,13 +28,6 @@ export default function TalentPool() {
   // Active assignment selection state
   const [activeCandidateToAssign, setActiveCandidateToAssign] = useState<any | null>(null);
 
-  // Filter mode for talent pool view
-  const [filterMode, setFilterMode] = useState<'all' | 'mapped'>('all');
-
-  const mappedCountForSelectedJob = selectedJob 
-    ? mappings.filter(m => m.position_id === selectedJob.id).length 
-    : 0;
-
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -301,13 +294,7 @@ export default function TalentPool() {
     const branch = (s.branch || '').toLowerCase();
     const skillList = (s.skills || []).map((sk: any) => (typeof sk === 'string' ? sk : sk.name).toLowerCase()).join(' ');
     
-    const matchesQuery = name.includes(query) || regNo.includes(query) || branch.includes(query) || skillList.includes(query);
-    if (!matchesQuery) return false;
-
-    if (filterMode === 'mapped' && selectedJob) {
-      return mappings.some(m => m.student_id === s.user_id && m.position_id === selectedJob.id);
-    }
-    return true;
+    return name.includes(query) || regNo.includes(query) || branch.includes(query) || skillList.includes(query);
   }).sort((a, b) => {
     if (!selectedJob) return 0;
     const aMapped = mappings.some(m => m.student_id === a.user_id && m.position_id === selectedJob.id);
@@ -375,10 +362,7 @@ export default function TalentPool() {
                   return (
                     <div
                       key={job.id}
-                      onClick={() => {
-                        setSelectedJob(job);
-                        setFilterMode('all');
-                      }}
+                      onClick={() => setSelectedJob(job)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => handleDrop(e, job.id)}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between mr-1 ${
@@ -427,63 +411,21 @@ export default function TalentPool() {
           {/* RIGHT COLUMN: Talent Directory & Search (Drag Sources) - span 8 */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Search Bar & Registered Candidates Filter */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full sm:max-w-md">
-                  <input
-                    type="text"
-                    placeholder="Search student by name, skill, branch, or Roll No..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm transition-all"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setFilterMode('all')}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      filterMode === 'all'
-                        ? 'bg-[#111111] text-white shadow-sm'
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    All Talent ({students.length})
-                  </button>
-
-                  {selectedJob && (
-                    <button
-                      onClick={() => setFilterMode('mapped')}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        filterMode === 'mapped'
-                          ? 'bg-[var(--gold-medium)] text-white shadow-sm'
-                          : 'bg-amber-50 text-[var(--gold-medium)] hover:bg-amber-100 border border-[var(--gold-medium)]/30'
-                      }`}
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Registered ({mappedCountForSelectedJob})</span>
-                    </button>
-                  )}
-                </div>
+            {/* Search Bar */}
+            <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="relative w-full sm:max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search student by name, skill, branch, or Roll No..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] outline-none text-sm transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
-
-              {selectedJob && (
-                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                  <span className="text-gray-500 font-medium">
-                    Selected Role: <strong className="text-[#111111] font-bold">{selectedJob.role}</strong> ({selectedJob.companies?.company_name})
-                  </span>
-                  {mappedCountForSelectedJob > 0 && filterMode !== 'mapped' && (
-                    <button
-                      onClick={() => setFilterMode('mapped')}
-                      className="text-[var(--gold-medium)] font-bold hover:underline cursor-pointer flex items-center gap-1 text-[11px]"
-                    >
-                      Filter to {mappedCountForSelectedJob} Registered Candidate{mappedCountForSelectedJob > 1 ? 's' : ''} →
-                    </button>
-                  )}
-                </div>
-              )}
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 font-mono">
+                {filteredStudents.length} Students Listed
+              </span>
             </div>
 
             {/* Students List */}
