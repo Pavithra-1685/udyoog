@@ -218,7 +218,7 @@ export default function AiSummaryModal({
                     Target: <span className="font-semibold text-gray-800">{companyName}</span>
                     {stage && (
                       <>
-                        {' '}• Stage: <span className="capitalize text-gray-700">{stage}</span>
+                        {' '}• Category: <span className="capitalize text-gray-700">{stage}</span>
                       </>
                     )}
                   </p>

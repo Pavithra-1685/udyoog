@@ -238,14 +238,14 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <label className="block text-xs font-bold uppercase tracking-widest text-[#111111] flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[var(--gold-gradient)]" />
-                    Business Stage
+                    Category
                   </label>
                   <select
                     value={stageFilter}
                     onChange={(e) => setStageFilter(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--gold-medium)] bg-white text-[#111111] font-medium transition-all shadow-sm cursor-pointer appearance-none"
                   >
-                    <option value="all">All Stages</option>
+                    <option value="all">All Categories</option>
                     <option value="initiation">Initiation</option>
                     <option value="planning">Planning</option>
                     <option value="execution">Execution</option>

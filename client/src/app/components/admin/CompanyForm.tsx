@@ -209,7 +209,7 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-bold text-gray-900">Engagement Stage</label>
+                      <label className="block text-sm font-bold text-gray-900">Category</label>
                       <div className="relative">
                         <select
                           value={stage}
