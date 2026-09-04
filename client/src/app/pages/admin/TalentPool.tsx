@@ -454,18 +454,6 @@ export default function TalentPool() {
                       onClick={() => setSelectedStudent(student)}
                     >
                       <div>
-                        {isAssignedToSelectedJob && selectedJob && (
-                          <div className="mb-3 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-2xl flex items-center justify-between text-xs text-emerald-800 font-bold">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span className="truncate">Registered for {selectedJob.role}</span>
-                            </div>
-                            <span className="text-[9px] uppercase tracking-wider bg-emerald-100/80 text-emerald-800 px-2 py-0.5 rounded-md font-mono shrink-0 ml-1">
-                              Mapped
-                            </span>
-                          </div>
-                        )}
-
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-[#111111]/10 rounded-2xl flex items-center justify-center font-bold text-lg text-[#111111] shadow-inner">
