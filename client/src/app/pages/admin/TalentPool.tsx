@@ -332,29 +332,29 @@ export default function TalentPool() {
           {/* LEFT COLUMN: Active Jobs (Drop Targets) - span 4 */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm sticky top-24">
-              <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
-                <h3 className="font-extrabold text-[#111111] text-lg flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-[var(--gold-medium)]" />
-                  Active Job Roles
+              <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
+                <h3 className="font-extrabold text-[#111111] text-lg flex items-center gap-2.5">
+                  <Briefcase className="w-5 h-5 text-[var(--gold-medium)] shrink-0" />
+                  <span>Active Job Roles</span>
                 </h3>
-                <span className="text-[10px] font-black uppercase text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-mono">
+                <span className="text-[10px] font-black uppercase text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-mono border border-gray-200/60 shadow-2xs">
                   {activeJobs.length} open
                 </span>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-6 mb-6 flex items-start gap-4">
-                <div className="p-2 bg-white rounded-xl shadow-sm">
-                  <LayoutDashboard className="w-6 h-6 text-[#111111]" />
+              <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 border border-blue-100/80 rounded-2xl p-4.5 mb-5 flex items-start gap-3.5 shadow-2xs">
+                <div className="p-2.5 bg-white rounded-xl shadow-xs shrink-0 text-[#111111]">
+                  <LayoutDashboard className="w-5 h-5 text-[var(--gold-medium)]" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#111111] mb-1">Mapping Workspace</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed font-outfit">
-                    Drag student cards into a job to map them, or select a job below to view side-by-side comparisons.
+                  <h3 className="font-extrabold text-sm text-[#111111] mb-1">Mapping Workspace</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed font-outfit">
+                    Drag student cards into a job role to map them, or click any card below to inspect and compare.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-3 max-h-[58vh] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-3.5 max-h-[540px] overflow-y-auto pl-0.5 pr-2 py-1 custom-scrollbar">
                 {activeJobs.map(job => {
                   const isSelected = selectedJob?.id === job.id;
                   const mappedCount = mappings.filter(m => m.position_id === job.id).length;
@@ -365,34 +365,36 @@ export default function TalentPool() {
                       onClick={() => setSelectedJob(job)}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => handleDrop(e, job.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between mr-1 ${
+                      className={`p-4.5 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between mr-1 ${
                         isSelected 
-                          ? 'border-[var(--gold-medium)] bg-[var(--gold-gradient)]/5 shadow-md shadow-[var(--gold-medium)]/5' 
-                          : 'border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200'
+                          ? 'border-[var(--gold-medium)] bg-[var(--gold-gradient)]/5 shadow-md shadow-[var(--gold-medium)]/10 ring-1 ring-[var(--gold-medium)]/20' 
+                          : 'border-gray-100 bg-gray-50/40 hover:bg-white hover:border-gray-200 hover:shadow-xs'
                       }`}
                     >
                       <div>
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="text-[9px] font-black uppercase text-[var(--gold-medium)] tracking-wider">
-                            {job.companies?.company_name}
+                        <div className="flex justify-between items-center gap-2 mb-1.5">
+                          <span className="text-[10px] font-extrabold uppercase text-[var(--gold-medium)] tracking-wider truncate">
+                            {job.companies?.company_name || 'Partner Company'}
                           </span>
                           {mappedCount > 0 && (
-                            <span className="text-[9px] font-black bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 uppercase font-mono">
+                            <span className="text-[10px] font-extrabold bg-amber-50 text-[var(--gold-medium)] border border-amber-200/80 px-2.5 py-0.5 rounded-full uppercase font-mono shadow-2xs shrink-0 flex items-center gap-1">
                               {mappedCount} Mapped
                             </span>
                           )}
                         </div>
-                        <h4 className="font-bold text-sm text-[#111111] mt-1 truncate group-hover:text-[var(--gold-medium)] transition-colors">
+                        <h4 className="font-extrabold text-base text-[#111111] leading-snug truncate group-hover:text-[var(--gold-medium)] transition-colors">
                           {job.role}
                         </h4>
                       </div>
 
-                      <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold mt-3 pt-2 border-t border-gray-100/50">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 shrink-0" /> {job.location || 'Remote'}
+                      <div className="flex justify-between items-center text-xs text-gray-500 font-medium mt-3.5 pt-2.5 border-t border-gray-100/80">
+                        <span className="flex items-center gap-1.5 text-gray-500">
+                          <MapPin className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                          <span className="truncate">{job.location || 'Remote'}</span>
                         </span>
-                        <span className="flex items-center gap-1 text-[#111111]">
-                          <IndianRupee className="w-3 h-3 shrink-0 text-[var(--gold-medium)]" /> {job.salary || 'Salary N/A'}
+                        <span className="flex items-center gap-1 text-[#111111] font-bold font-mono text-xs">
+                          <IndianRupee className="w-3.5 h-3.5 shrink-0 text-[var(--gold-medium)]" />
+                          <span>{job.salary || 'Salary N/A'}</span>
                         </span>
                       </div>
                     </div>
@@ -400,7 +402,7 @@ export default function TalentPool() {
                 })}
 
                 {activeJobs.length === 0 && (
-                  <div className="text-center py-10 text-gray-400 text-sm">
+                  <div className="text-center py-12 text-gray-400 text-sm font-medium">
                     No active job listings.
                   </div>
                 )}
