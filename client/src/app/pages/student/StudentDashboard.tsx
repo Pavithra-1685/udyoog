@@ -29,7 +29,7 @@ export default function StudentDashboard() {
         setUserEmail(user.email || '');
         const [profileRes, jobsRes, mappingsRes] = await Promise.all([
           supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
-          supabase.from('positions').select('*, companies(company_name)').in('status', ['open', 'on_hold']).order('created_at', { ascending: false }).limit(4),
+          supabase.from('positions').select('*, companies(company_name)').eq('status', 'open').order('created_at', { ascending: false }).limit(4),
           supabase.from('mapped_candidates').select('*').eq('student_id', user.id)
         ]);
         

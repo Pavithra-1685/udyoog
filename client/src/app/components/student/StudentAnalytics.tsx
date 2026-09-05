@@ -55,7 +55,7 @@ export default function StudentAnalytics({ profile }: StudentAnalyticsProps) {
         supabase
           .from('positions')
           .select('*, companies(company_name)')
-          .in('status', ['open', 'on_hold'])
+          .eq('status', 'open')
       ]);
 
       if (mappingsRes.data) setStudentMappings(mappingsRes.data);

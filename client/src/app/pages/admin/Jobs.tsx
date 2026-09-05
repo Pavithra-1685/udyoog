@@ -305,6 +305,11 @@ export default function Jobs() {
 
   // Filters logic
   const filteredJobs = jobs.filter(job => {
+    // If student, ONLY show open jobs (completely exclude closed or on-hold jobs)
+    if (userRole === 'student' && job.status !== 'open') {
+      return false;
+    }
+
     const query = searchQuery.toLowerCase();
     const roleMatches = (job.role || '').toLowerCase().includes(query);
     const descMatches = (job.description || '').toLowerCase().includes(query);
@@ -412,16 +417,18 @@ export default function Jobs() {
               <option value="onsite">On-Site / Hybrid</option>
             </select>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:flex-none px-4 py-2.5 rounded-xl border border-gray-200 bg-white font-semibold text-sm text-[#111111] focus:ring-2 focus:ring-[var(--gold-medium)]"
-            >
-              <option value="all">All Statuses</option>
-              <option value="open">Active Openings</option>
-              <option value="hold">On Hold</option>
-              <option value="close">Closed Listings</option>
-            </select>
+            {userRole !== 'student' && (
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="flex-1 md:flex-none px-4 py-2.5 rounded-xl border border-gray-200 bg-white font-semibold text-sm text-[#111111] focus:ring-2 focus:ring-[var(--gold-medium)]"
+              >
+                <option value="all">All Statuses</option>
+                <option value="open">Active Openings</option>
+                <option value="hold">On Hold</option>
+                <option value="close">Closed Listings</option>
+              </select>
+            )}
           </div>
         </div>
 
