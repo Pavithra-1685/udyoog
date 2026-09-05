@@ -55,13 +55,15 @@ const priorityColors = {
 };
 
 export const formatStageLabel = (stage?: string) => {
-  if (stage === 'new_client') return 'New Client';
+  if (stage === 'new_client' || stage === 'initiation') return 'New Client';
   return 'Existing Client';
 };
 
 const stageColors: Record<string, string> = {
   'existing_client': 'var(--gold-medium)',
+  'execution': 'var(--gold-medium)',
   'new_client': '#3b82f6',
+  'initiation': '#3b82f6',
 };
 
 const statusColors = {

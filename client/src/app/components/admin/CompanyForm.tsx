@@ -16,7 +16,8 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
   const [mounted, setMounted] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState(company?.id || '');
   const [companyName, setCompanyName] = useState(company?.company_name || '');
-  const [stage, setStage] = useState(company?.stage || 'existing_client');
+  const initialStage = company?.stage === 'initiation' || company?.stage === 'new_client' ? 'new_client' : 'existing_client';
+  const [stage, setStage] = useState(initialStage);
   const [priority, setPriority] = useState(company?.priority || 'medium');
   const [primaryContactName, setPrimaryContactName] = useState(company?.primary_contact_name || '');
   const [primaryEmail, setPrimaryEmail] = useState(company?.primary_email || '');
@@ -49,10 +50,13 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Map UI category to valid DB check constraint value
+    const dbStage = stage === 'new_client' || stage === 'initiation' ? 'initiation' : 'execution';
+
     const companyData: any = {
       id: isJobOnly ? selectedCompanyId : company?.id,
       company_name: companyName,
-      stage,
+      stage: dbStage,
       priority,
       primary_contact_name: primaryContactName,
       primary_email: primaryEmail,
