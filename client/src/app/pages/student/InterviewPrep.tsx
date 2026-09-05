@@ -11,7 +11,7 @@ import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { createGroqChatCompletion } from '../../../lib/ai';
 import confetti from 'canvas-confetti';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 interface Message {
   role: 'assistant' | 'user';
