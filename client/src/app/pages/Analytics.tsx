@@ -72,11 +72,18 @@ export default function Analytics() {
   const totalPositions = companies.reduce((sum, c) => sum + (c.positions?.length || 0), 0);
   const totalActivities = companies.reduce((sum, c) => sum + (c.activities?.length || 0), 0);
 
-  const stageData = Object.keys(stageColors).map((stage) => ({
-    name: stage.charAt(0).toUpperCase() + stage.slice(1),
-    value: companies.filter((c) => c.stage === stage).length,
-    color: stageColors[stage],
-  }));
+  const categoryData = [
+    {
+      name: 'Existing Client',
+      value: companies.filter((c) => c.stage !== 'new_client').length,
+      color: 'var(--gold-medium)',
+    },
+    {
+      name: 'New Client',
+      value: companies.filter((c) => c.stage === 'new_client').length,
+      color: '#3b82f6',
+    },
+  ];
 
   const priorityData = Object.keys(priorityColors).map((priority) => ({
     name: priority.charAt(0).toUpperCase() + priority.slice(1),
@@ -180,7 +187,7 @@ export default function Analytics() {
                   className="backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-gray-200/50 p-8"
                 >
                   <h2 className="text-xl font-bold mb-6" style={{ color: '#111111' }}>
-                    Stage Distribution
+                    Category Distribution
                   </h2>
                   {totalCompanies === 0 ? (
                     <div className="h-[300px] flex items-center justify-center text-gray-400 italic">No data</div>
@@ -188,7 +195,7 @@ export default function Analytics() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={stageData.filter((d) => d.value > 0)}
+                          data={categoryData.filter((d) => d.value > 0)}
                           cx="50%"
                           cy="50%"
                           innerRadius={60}
@@ -196,7 +203,7 @@ export default function Analytics() {
                           paddingAngle={5}
                           dataKey="value"
                         >
-                          {stageData.map((entry, index) => (
+                          {categoryData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>

@@ -55,20 +55,13 @@ const priorityColors = {
 };
 
 export const formatStageLabel = (stage?: string) => {
-  if (!stage) return 'Existing Client';
-  if (stage === 'existing_client') return 'Existing Client';
   if (stage === 'new_client') return 'New Client';
-  return stage.replace('_', ' ');
+  return 'Existing Client';
 };
 
 const stageColors: Record<string, string> = {
   'existing_client': 'var(--gold-medium)',
   'new_client': '#3b82f6',
-  'initiation': '#3b82f6',
-  'planning': '#8b5cf6',
-  'execution': 'var(--gold-medium)',
-  'monitoring': '#06b6d4',
-  'closure': '#10b981',
 };
 
 const statusColors = {

@@ -181,7 +181,8 @@ export default function Dashboard() {
   };
 
   const filteredCompanies = companies.filter((company) => {
-    if (stageFilter !== 'all' && company.stage !== stageFilter) return false;
+    const companyCategory = company.stage === 'new_client' ? 'new_client' : 'existing_client';
+    if (stageFilter !== 'all' && companyCategory !== stageFilter) return false;
     if (priorityFilter !== 'all' && company.priority !== priorityFilter) return false;
     return true;
   });
