@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { User, Mail, Calendar, Save, Lock, Eye, EyeOff, Loader2, Briefcase, Shield, AlertCircle } from 'lucide-react';
+import { User, Mail, Calendar, Save, Lock, Eye, EyeOff, Loader2, Briefcase } from 'lucide-react';
 import Navigation from '../components/shared/Navigation';
 import StudentProfileForm from '../components/student/StudentProfileForm';
 import { supabase } from '../../lib/supabase';
@@ -304,42 +304,6 @@ export default function Profile() {
               </div>
             </form>
           </div>
-
-          {role === 'admin' && (
-            <div className="backdrop-blur-lg bg-[#111111]/5 rounded-3xl shadow-sm border border-[#111111]/10 p-6 sm:p-10 mb-12">
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#111111' }}>
-                <Shield className="w-5 h-5 text-[var(--gold-medium)]" />
-                System Administrator Credentials
-              </h3>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div>
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admin Account 1</div>
-                    <div className="font-bold text-[#111111]">yuvashankar2211@gmail.com</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Password</div>
-                    <div className="font-mono bg-white px-3 py-1.5 rounded border border-gray-200 inline-block text-sm">Yuva@123</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div>
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Admin Account 2</div>
-                    <div className="font-bold text-[#111111]">rajarajan2994@gmail.com</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Password</div>
-                    <div className="font-mono bg-white px-3 py-1.5 rounded border border-gray-200 inline-block text-sm">CareerPathway@123</div>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 flex items-start gap-2 mt-4 bg-gray-50 p-3 rounded-lg border border-blue-100">
-                  <AlertCircle className="w-4 h-4 text-[#111111] shrink-0 mt-0.5" />
-                  <span>These credentials have elevated privileges across the platform including user provisioning and structural changes. Keep them secure.</span>
-                </div>
-              </div>
-            </div>
-          )}
 
         </motion.div>
       </div>
