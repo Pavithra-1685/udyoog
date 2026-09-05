@@ -1,5 +1,5 @@
-import { createBrowserRouter } from 'react-router';
-import { AlertCircle } from 'lucide-react';
+import { createBrowserRouter, useRouteError } from 'react-router';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import Root from './pages/Root';
 import Auth from './pages/Auth';
 import LandingPage from './pages/LandingPage';
@@ -24,21 +24,35 @@ import NotFound from './pages/NotFound';
 import RoleGuard from './components/shared/RoleGuard';
 
 function GlobalErrorBoundary() {
+  const error: any = useRouteError();
+  const errorMsg = error?.message || error?.statusText || (typeof error === 'string' ? error : 'An unexpected rendering error occurred.');
+
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-16 h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mb-4 border border-red-100 shadow-sm">
-        <AlertCircle className="w-8 h-8" />
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl max-w-md w-full">
+        <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-sm">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <h1 className="text-xl font-bold text-[#111111] mb-2">Something went wrong</h1>
+        <p className="text-xs text-gray-500 mb-6 leading-relaxed bg-gray-50 p-3 rounded-xl font-mono break-words border border-gray-200/60">
+          {errorMsg}
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-5 py-2.5 bg-[#111111] text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all cursor-pointer shadow-md"
+          >
+            Home
+          </button>
+        </div>
       </div>
-      <h1 className="text-2xl font-bold text-[#111111] mb-2">Something went wrong</h1>
-      <p className="text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
-        An unexpected error occurred while loading this page. Please refresh or return to the platform home.
-      </p>
-      <button
-        onClick={() => window.location.href = '/'}
-        className="px-6 py-3 bg-[#111111] text-white rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all cursor-pointer shadow-md"
-      >
-        Return to Home
-      </button>
     </div>
   );
 }

@@ -70,13 +70,14 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
 
       // Filter by user or broadcast/role
       const { data, error } = await query;
-      if (!error && data) {
+      if (!error && data && Array.isArray(data)) {
         // Client side filtering to guarantee RLS or role matches
         const filtered = data.filter((item: NotificationItem) => {
+          if (!item) return false;
           if (!item.user_id) return true; // Broadcast
           if (item.user_id === userId) return true;
-          if (role === 'admin' && item.type?.includes('admin')) return true;
-          if (role === 'faculty' && item.type?.includes('faculty')) return true;
+          if (role === 'admin' && typeof item.type === 'string' && item.type.includes('admin')) return true;
+          if (role === 'faculty' && typeof item.type === 'string' && item.type.includes('faculty')) return true;
           return false;
         });
         setNotifications(filtered);
@@ -89,48 +90,59 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   // 2. Setup Realtime Subscriptions (Dual: Postgres Changes + Channel Broadcast)
   useEffect(() => {
     if (!currentUserId) return;
+    let channel: any = null;
 
-    // Create channel and attach ALL listeners BEFORE calling .subscribe()
-    const channel = supabase
-      .channel(`udyoog_notifs_${currentUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications'
-        },
-        (payload) => {
-          const newNotif = payload.new as NotificationItem;
-          if (
-            !newNotif.user_id ||
-            newNotif.user_id === currentUserId ||
-            (userRole === 'admin' && newNotif.type?.includes('admin')) ||
-            (userRole === 'faculty' && newNotif.type?.includes('faculty'))
-          ) {
-            handleIncomingNotification(newNotif);
+    try {
+      // Create channel and attach ALL listeners BEFORE calling .subscribe()
+      channel = supabase
+        .channel(`udyoog_notifs_${currentUserId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications'
+          },
+          (payload) => {
+            const newNotif = payload?.new as NotificationItem;
+            if (!newNotif) return;
+            if (
+              !newNotif.user_id ||
+              newNotif.user_id === currentUserId ||
+              (userRole === 'admin' && typeof newNotif.type === 'string' && newNotif.type.includes('admin')) ||
+              (userRole === 'faculty' && typeof newNotif.type === 'string' && newNotif.type.includes('faculty'))
+            ) {
+              handleIncomingNotification(newNotif);
+            }
           }
-        }
-      )
-      .on(
-        'broadcast',
-        { event: 'new_notification' },
-        (event) => {
-          const newNotif = event.payload as NotificationItem;
-          if (
-            !newNotif.user_id ||
-            newNotif.user_id === currentUserId ||
-            (userRole === 'admin' && newNotif.type?.includes('admin')) ||
-            (userRole === 'faculty' && newNotif.type?.includes('faculty'))
-          ) {
-            handleIncomingNotification(newNotif);
+        )
+        .on(
+          'broadcast',
+          { event: 'new_notification' },
+          (event) => {
+            const newNotif = event?.payload as NotificationItem;
+            if (!newNotif) return;
+            if (
+              !newNotif.user_id ||
+              newNotif.user_id === currentUserId ||
+              (userRole === 'admin' && typeof newNotif.type === 'string' && newNotif.type.includes('admin')) ||
+              (userRole === 'faculty' && typeof newNotif.type === 'string' && newNotif.type.includes('faculty'))
+            ) {
+              handleIncomingNotification(newNotif);
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('Realtime subscription fallback error:', err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [currentUserId, userRole]);
 
