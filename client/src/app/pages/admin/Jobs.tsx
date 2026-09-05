@@ -306,6 +306,21 @@ export default function Jobs() {
     return textMatches && locationMatches && statusMatches;
   });
 
+  const handleQuickStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('positions')
+        .update({ status: newStatus })
+        .eq('id', jobId);
+
+      if (error) throw error;
+      toast.success(`Job status updated to ${newStatus.toUpperCase()}`);
+      setJobs(prevJobs => prevJobs.map(j => j.id === jobId ? { ...j, status: newStatus } : j));
+    } catch (err: any) {
+      toast.error('Failed to update job status: ' + err.message);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const configs: any = {
       open: 'bg-gray-50 text-[#111111] border-gray-200',
@@ -331,10 +346,10 @@ export default function Jobs() {
                 : 'Manage and track active employment opportunities'}
             </p>
           </div>
-          {userRole === 'admin' && (
+          {(userRole === 'admin' || userRole === 'faculty') && (
             <button
               onClick={openCreateModal}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white font-bold transition-all hover:opacity-90 shadow-lg shadow-[var(--gold-gradient)]/20"
+              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-white font-bold transition-all hover:opacity-90 shadow-lg shadow-[var(--gold-gradient)]/20 cursor-pointer"
               style={{ backgroundColor: 'var(--gold-medium)' }}
             >
               <Plus className="w-5 h-5" />
@@ -416,9 +431,25 @@ export default function Jobs() {
                         {job.companies?.company_name || 'Direct Recruitment'}
                       </span>
                     </div>
-                    <span className={`text-[10px] px-3 py-1.5 border font-black uppercase rounded-full shadow-sm ${getStatusBadge(job.status)}`}>
-                      {job.status}
-                    </span>
+                    {(userRole === 'admin' || userRole === 'faculty') ? (
+                      <div className="relative">
+                        <select
+                          value={job.status || 'open'}
+                          onChange={(e) => handleQuickStatusChange(job.id, e.target.value)}
+                          className={`text-[10px] px-3 py-1.5 border font-black uppercase rounded-full shadow-sm cursor-pointer outline-none appearance-none pr-6 ${getStatusBadge(job.status)}`}
+                          title="Click to change job status"
+                        >
+                          <option value="open" className="bg-white text-gray-900 font-bold">OPEN</option>
+                          <option value="hold" className="bg-white text-amber-700 font-bold">HOLD</option>
+                          <option value="close" className="bg-white text-red-600 font-bold">CLOSED</option>
+                        </select>
+                        <ChevronRight className="w-3 h-3 rotate-90 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                      </div>
+                    ) : (
+                      <span className={`text-[10px] px-3 py-1.5 border font-black uppercase rounded-full shadow-sm ${getStatusBadge(job.status)}`}>
+                        {job.status === 'close' ? 'CLOSED' : job.status}
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-5 mb-6 flex-1">
@@ -543,7 +574,7 @@ export default function Jobs() {
                         </button>
                       </div>
 
-                      {userRole === 'admin' && (
+                      {(userRole === 'admin' || userRole === 'faculty') && (
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => openEditModal(job)}
@@ -552,13 +583,15 @@ export default function Jobs() {
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteJob(job.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Delete Job"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {userRole === 'admin' && (
+                            <button
+                              onClick={() => handleDeleteJob(job.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              title="Delete Job"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </>
