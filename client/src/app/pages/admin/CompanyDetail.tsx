@@ -29,11 +29,13 @@ const priorityColors: Record<string, string> = {
 };
 
 const stageColors: Record<string, string> = {
-  initiation: '#3b82f6',
-  planning: '#8b5cf6',
-  execution: 'var(--gold-medium)',
-  monitoring: '#06b6d4',
-  closure: '#10b981',
+  'existing_client': 'var(--gold-medium)',
+  'new_client': '#3b82f6',
+  'initiation': '#3b82f6',
+  'planning': '#8b5cf6',
+  'execution': 'var(--gold-medium)',
+  'monitoring': '#06b6d4',
+  'closure': '#10b981',
 };
 
 export default function CompanyDetail() {
@@ -207,9 +209,9 @@ export default function CompanyDetail() {
                 </h1>
                 <div 
                   className="px-3 py-1 rounded-full text-white text-xs font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: stageColors[company.stage] }}
+                  style={{ backgroundColor: stageColors[company.stage] || 'var(--gold-medium)' }}
                 >
-                  {company.stage}
+                  {company.stage === 'existing_client' ? 'Existing Client' : company.stage === 'new_client' ? 'New Client' : company.stage}
                 </div>
               </div>
               

@@ -16,7 +16,7 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
   const [mounted, setMounted] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState(company?.id || '');
   const [companyName, setCompanyName] = useState(company?.company_name || '');
-  const [stage, setStage] = useState(company?.stage || 'initiation');
+  const [stage, setStage] = useState(company?.stage || 'existing_client');
   const [priority, setPriority] = useState(company?.priority || 'medium');
   const [primaryContactName, setPrimaryContactName] = useState(company?.primary_contact_name || '');
   const [primaryEmail, setPrimaryEmail] = useState(company?.primary_email || '');
@@ -216,11 +216,8 @@ export default function CompanyForm({ company, existingCompanies, isJobOnly, onC
                           onChange={(e) => setStage(e.target.value as any)}
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[var(--gold-medium)] focus:border-transparent outline-none appearance-none cursor-pointer bg-white font-medium text-gray-800 transition-all shadow-xs pr-10"
                         >
-                          <option value="initiation">Initiation</option>
-                          <option value="planning">Planning</option>
-                          <option value="execution">Execution</option>
-                          <option value="monitoring">Monitoring</option>
-                          <option value="closure">Closure</option>
+                          <option value="existing_client">Existing Client</option>
+                          <option value="new_client">New Client</option>
                         </select>
                         <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>

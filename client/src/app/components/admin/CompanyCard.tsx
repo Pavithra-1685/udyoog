@@ -54,7 +54,16 @@ const priorityColors = {
   low: '#10b981',
 };
 
-const stageColors = {
+export const formatStageLabel = (stage?: string) => {
+  if (!stage) return 'Existing Client';
+  if (stage === 'existing_client') return 'Existing Client';
+  if (stage === 'new_client') return 'New Client';
+  return stage.replace('_', ' ');
+};
+
+const stageColors: Record<string, string> = {
+  'existing_client': 'var(--gold-medium)',
+  'new_client': '#3b82f6',
   'initiation': '#3b82f6',
   'planning': '#8b5cf6',
   'execution': 'var(--gold-medium)',
@@ -151,9 +160,9 @@ export default function CompanyCard({ company, onEdit, onAddActivity }: CompanyC
 
             <span
               className="px-3 py-1 rounded-full text-white text-sm capitalize font-medium shadow-sm"
-              style={{ backgroundColor: stageColors[company.stage] }}
+              style={{ backgroundColor: stageColors[company.stage] || 'var(--gold-medium)' }}
             >
-              {company.stage}
+              {formatStageLabel(company.stage)}
             </span>
 
             <span className="px-3 py-1 rounded-full bg-gray-100 text-sm flex items-center gap-1 font-medium text-gray-700">

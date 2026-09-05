@@ -246,11 +246,8 @@ export default function Dashboard() {
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--gold-medium)] bg-white text-[#111111] font-medium transition-all shadow-sm cursor-pointer appearance-none"
                   >
                     <option value="all">All Categories</option>
-                    <option value="initiation">Initiation</option>
-                    <option value="planning">Planning</option>
-                    <option value="execution">Execution</option>
-                    <option value="monitoring">Monitoring</option>
-                    <option value="closure">Closure</option>
+                    <option value="existing_client">Existing Client</option>
+                    <option value="new_client">New Client</option>
                   </select>
                 </div>
 
