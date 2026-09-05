@@ -13,32 +13,134 @@ interface AiSummaryModalProps {
 }
 
 function FormattedAiContent({ summary }: { summary: string }) {
-  // Split summary into structured sections based on numbers, markdown headers, or titles
+  const parseInlineMarkdown = (text: string) => {
+    if (!text) return null;
+    
+    // Clean up unbalanced markers like *text** -> **text**
+    const cleanText = text
+      .replace(/\*([^\*]+)\*\*/g, '**$1**')
+      .replace(/\*\*([^\*]+)\*/g, '**$1**');
+
+    const parts = cleanText.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+        return (
+          <strong key={i} className="font-semibold text-gray-900">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+        return (
+          <em key={i} className="italic text-gray-800">
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      return part;
+    });
+  };
+
+  const renderMarkdownTable = (tableLines: string[]) => {
+    const parsedRows = tableLines
+      .map(line =>
+        line
+          .split('|')
+          .map(cell => cell.trim())
+          .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+      )
+      .filter(row => row.length > 0);
+
+    if (parsedRows.length === 0) return null;
+
+    // Filter out separator row like ["---", "---", "---"]
+    const dataRows = parsedRows.filter(row => !row.every(cell => /^[\s\-:]+$/.test(cell)));
+    if (dataRows.length === 0) return null;
+
+    const headers = dataRows[0];
+    const bodyRows = dataRows.slice(1);
+
+    return (
+      <div className="overflow-x-auto my-3 rounded-xl border border-gray-200 shadow-xs bg-white">
+        <table className="w-full text-left border-collapse text-xs md:text-sm">
+          <thead>
+            <tr className="bg-gray-100/90 border-b border-gray-200 text-gray-800 font-bold uppercase tracking-wider text-[11px]">
+              {headers.map((h, i) => (
+                <th key={i} className="px-3.5 py-2.5 font-bold">
+                  {parseInlineMarkdown(h)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {bodyRows.map((row, rIdx) => (
+              <tr key={rIdx} className="hover:bg-gray-50/70 transition-colors">
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx} className="px-3.5 py-2.5 text-gray-700 leading-relaxed">
+                    {parseInlineMarkdown(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // Split summary into structured sections
   const lines = summary.split('\n');
-  const sections: { title: string; content: string[] }[] = [];
-  let currentSection = { title: 'Executive Summary', content: [] as string[] };
+  const sections: { title: string; content: (string | { type: 'table'; lines: string[] })[] }[] = [];
+  
+  let currentSection = {
+    title: 'Executive Summary',
+    content: [] as (string | { type: 'table'; lines: string[] })[]
+  };
+  
+  let currentTableLines: string[] = [];
+
+  const flushTable = () => {
+    if (currentTableLines.length > 0) {
+      currentSection.content.push({ type: 'table', lines: [...currentTableLines] });
+      currentTableLines = [];
+    }
+  };
 
   lines.forEach((line) => {
     const trimmed = line.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      flushTable();
+      return;
+    }
 
-    // Detect section headers like "1. Executive Summary", "### 2. Timeline", "**3. Roles**"
-    const headerMatch = trimmed.match(/^(\#+|\d+\.|\*\*)\s*(Executive Summary|Strategic Timeline|Open Opportunities|Critical Next Steps|Key Insights|Potential Blockers|Engagement Overview|Action Items)/i);
-    
-    if (headerMatch || /^(\d+\.\s+[A-Z])/.test(trimmed)) {
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|')) {
+      currentTableLines.push(trimmed);
+      return;
+    } else {
+      flushTable();
+    }
+
+    const isHeader =
+      /^(?:\#+|\d+\.|\*+\d+\.|\*\*)\s*(Executive Summary|Strategic Timeline|Open Opportunities|Critical Next Steps|Key Insights|Potential Blockers|Engagement Overview|Action Items|Market Context|Recommendations|Summary)/i.test(trimmed) ||
+      /^(\#+\s+|\*\*[\d\w\s]+[:\*\*])/i.test(trimmed);
+
+    if (isHeader) {
       if (currentSection.content.length > 0) {
         sections.push(currentSection);
       }
       const cleanTitle = trimmed
-        .replace(/^(\#+|\d+\.|\*\*)\s*/, '')
-        .replace(/\*\*/g, '')
-        .replace(/:$/, '');
-      currentSection = { title: cleanTitle, content: [] };
+        .replace(/^[\#\*\s\d\.\-•]+/g, '')
+        .replace(/[\*\#]+$/g, '')
+        .replace(/:$/, '')
+        .trim();
+
+      currentSection = { title: cleanTitle || 'Overview', content: [] };
     } else {
       currentSection.content.push(line);
     }
   });
 
+  flushTable();
   if (currentSection.content.length > 0) {
     sections.push(currentSection);
   }
@@ -87,20 +189,6 @@ function FormattedAiContent({ summary }: { summary: string }) {
     };
   };
 
-  const parseInlineMarkdown = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <strong key={i} className="font-semibold text-gray-900">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      return part;
-    });
-  };
-
   return (
     <div className="space-y-5">
       {sections.map((sec, idx) => {
@@ -119,20 +207,27 @@ function FormattedAiContent({ summary }: { summary: string }) {
               </h4>
             </div>
             <div className="space-y-2.5 text-gray-600 text-sm leading-relaxed">
-              {sec.content.map((paragraph, pIdx) => {
-                const trimmedP = paragraph.trim();
-                const isBullet = trimmedP.startsWith('-') || trimmedP.startsWith('*') || trimmedP.startsWith('•');
-                const cleanPara = isBullet ? trimmedP.replace(/^[-*•]\s*/, '') : trimmedP;
+              {sec.content.map((item, itemIdx) => {
+                if (typeof item === 'object' && item.type === 'table') {
+                  return <div key={itemIdx}>{renderMarkdownTable(item.lines)}</div>;
+                }
+
+                const lineStr = item as string;
+                const trimmedP = lineStr.trim();
+                const isBullet = /^[-\*•]\s/.test(trimmedP) || /^\*\d+\./.test(trimmedP);
+                const cleanPara = trimmedP
+                  .replace(/^[-\*•]\s*/, '')
+                  .replace(/^\*\d+\.\s*/, '');
 
                 if (isBullet) {
                   return (
-                    <div key={pIdx} className="flex items-start gap-2.5 pl-1">
+                    <div key={itemIdx} className="flex items-start gap-2.5 pl-1">
                       <span className="text-[var(--gold-medium)] font-bold text-base leading-none mt-1 shrink-0">•</span>
                       <span className="flex-1">{parseInlineMarkdown(cleanPara)}</span>
                     </div>
                   );
                 }
-                return <p key={pIdx}>{parseInlineMarkdown(cleanPara)}</p>;
+                return <p key={itemIdx}>{parseInlineMarkdown(cleanPara)}</p>;
               })}
             </div>
           </div>
