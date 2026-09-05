@@ -259,16 +259,6 @@ export default function StudentDashboard() {
               Here is your current placement snapshot, active opportunities, and recommended next steps.
             </p>
           </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <button 
-              onClick={() => navigate('/interview-prep')}
-              className="px-4 py-2.5 bg-[#111111] text-white hover:bg-black rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-2"
-            >
-              <BrainCircuit className="w-4 h-4 text-[var(--gold-medium)]" />
-              <span>AI Coach</span>
-            </button>
-          </div>
         </div>
 
         {/* 1. TOP CARDS GRID: Profile Summary & Career Readiness Snapshot */}
