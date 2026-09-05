@@ -8,7 +8,7 @@ import {
 import {
   TrendingUp, Briefcase, Activity as ActivityIcon, Building2, Loader2, Sparkles,
   Users, Award, CheckCircle2, AlertTriangle, ArrowUpRight, Filter, Calendar,
-  DollarSign, Clock, Layers, ArrowRight, RefreshCw, ChevronRight, UserCheck
+  DollarSign, Clock, Layers, ArrowRight, RefreshCw, ChevronRight, UserCheck, Search, X, Mail, GraduationCap
 } from 'lucide-react';
 import Navigation from '../components/shared/Navigation';
 import StudentAnalytics from '../components/student/StudentAnalytics';
@@ -63,17 +63,6 @@ interface MappingItem {
 
 const FUNNEL_COLORS = ['#3b82f6', '#8b5cf6', '#a855f7', '#f59e0b', '#10b981'];
 
-const JOB_STATUS_COLORS: Record<string, string> = {
-  OPEN: '#10b981',
-  open: '#10b981',
-  ON_HOLD: '#f59e0b',
-  on_hold: '#f59e0b',
-  CLOSED: '#ef4444',
-  closed: '#ef4444',
-  DRAFT: '#9ca3af',
-  draft: '#9ca3af'
-};
-
 const APP_STATUS_COLORS: Record<string, string> = {
   applied: '#3b82f6',
   faculty_recommended: '#8b5cf6',
@@ -96,6 +85,10 @@ export default function Analytics() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [studentProfileData, setStudentProfileData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Modal State for Candidate Detail Drill-down
+  const [selectedStatusModal, setSelectedStatusModal] = useState<{ name: string; code: string } | null>(null);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
 
   // Raw Database Data
   const [students, setStudents] = useState<ProfileItem[]>([]);
@@ -180,6 +173,21 @@ export default function Analytics() {
     };
   }, []);
 
+  // Open Candidate Detail Modal on click
+  const openStatusCandidatesModal = (statusName: string) => {
+    let code = 'applied';
+    const norm = statusName.toLowerCase();
+
+    if (norm.includes('faculty') || norm.includes('recommended')) code = 'faculty_recommended';
+    else if (norm.includes('admin') || norm.includes('mapped')) code = 'mapped';
+    else if (norm.includes('interview')) code = 'interview_scheduled';
+    else if (norm.includes('select') || norm.includes('placed') || norm.includes('offer')) code = 'selected';
+    else if (norm.includes('reject')) code = 'rejected';
+
+    setSelectedStatusModal({ name: statusName, code });
+    setModalSearchQuery('');
+  };
+
   // Filtered Raw Data based on Global Filters
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -221,6 +229,50 @@ export default function Analytics() {
       return true;
     });
   }, [mappings, filteredStudentIds, filteredPositionIds, filterDepartment, filterCompany, filterJobStatus, filterYear]);
+
+  // Candidates for selected modal status drill-down
+  const activeStatusCandidates = useMemo(() => {
+    if (!selectedStatusModal) return [];
+
+    const studentMap = new Map(students.map((s) => [s.user_id, s]));
+    const posMap = new Map(positions.map((p) => [p.id, p]));
+    const code = selectedStatusModal.code;
+
+    return filteredMappings.filter((m) => {
+      const st = (m.status || '').toLowerCase();
+      if (code === 'applied') return st === 'applied' || st === '';
+      if (code === 'faculty_recommended') return st === 'faculty_recommended' || st === 'recommended';
+      if (code === 'mapped') return st === 'mapped';
+      if (code === 'interview_scheduled') return st === 'interview_scheduled' || st === 'interviewing';
+      if (code === 'selected') return st === 'selected' || st === 'placed' || st === 'offered';
+      if (code === 'rejected') return st === 'rejected';
+      return true;
+    }).map((m) => {
+      const student = studentMap.get(m.student_id);
+      const pos = posMap.get(m.position_id);
+      return {
+        mappingId: m.id,
+        studentName: student?.full_name || 'Student Candidate',
+        email: student?.email || 'N/A',
+        department: student?.branch || student?.department || 'CSE',
+        cgpa: student?.cgpa || 'N/A',
+        jobRole: pos?.role || pos?.title || 'Position',
+        companyName: pos?.companies?.company_name || 'Partner Company',
+        appliedAt: m.created_at,
+        status: m.status || 'applied'
+      };
+    }).filter((c) => {
+      if (!modalSearchQuery) return true;
+      const q = modalSearchQuery.toLowerCase();
+      return (
+        c.studentName.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.department.toLowerCase().includes(q) ||
+        c.companyName.toLowerCase().includes(q) ||
+        c.jobRole.toLowerCase().includes(q)
+      );
+    });
+  }, [selectedStatusModal, filteredMappings, students, positions, modalSearchQuery]);
 
   // 1. TOP KPI CARDS CALCULATIONS
   const totalStudentsCount = filteredStudents.length;
@@ -280,21 +332,20 @@ export default function Analytics() {
       if (st === 'selected' || st === 'placed' || st === 'offered') selected++;
     });
 
-    // Accumulate funnel progression
     const recommendedCumulative = recommended + mapped + interviewed + selected;
     const mappedCumulative = mapped + interviewed + selected;
     const interviewedCumulative = interviewed + selected;
 
     return [
-      { stage: 'Applications', count: totalApps, pct: totalApps > 0 ? 100 : 0 },
-      { stage: 'Faculty Recommended', count: recommendedCumulative, pct: totalApps > 0 ? Math.round((recommendedCumulative / totalApps) * 100) : 0 },
-      { stage: 'Admin Mapped', count: mappedCumulative, pct: totalApps > 0 ? Math.round((mappedCumulative / totalApps) * 100) : 0 },
-      { stage: 'Interview Scheduled', count: interviewedCumulative, pct: totalApps > 0 ? Math.round((interviewedCumulative / totalApps) * 100) : 0 },
-      { stage: 'Selected / Placed', count: selected, pct: totalApps > 0 ? Math.round((selected / totalApps) * 100) : 0 }
+      { stage: 'Applications', code: 'applied', count: totalApps, pct: totalApps > 0 ? 100 : 0 },
+      { stage: 'Faculty Recommended', code: 'faculty_recommended', count: recommendedCumulative, pct: totalApps > 0 ? Math.round((recommendedCumulative / totalApps) * 100) : 0 },
+      { stage: 'Admin Mapped', code: 'mapped', count: mappedCumulative, pct: totalApps > 0 ? Math.round((mappedCumulative / totalApps) * 100) : 0 },
+      { stage: 'Interview Scheduled', code: 'interview_scheduled', count: interviewedCumulative, pct: totalApps > 0 ? Math.round((interviewedCumulative / totalApps) * 100) : 0 },
+      { stage: 'Selected / Placed', code: 'selected', count: selected, pct: totalApps > 0 ? Math.round((selected / totalApps) * 100) : 0 }
     ];
   }, [filteredMappings]);
 
-  // 3. PLACEMENT TREND CHART (Monthly Aggregation)
+  // 3. PLACEMENT TREND CHART
   const trendChartData = useMemo(() => {
     const monthMap: Record<string, { month: string; applications: number; interviews: number; placements: number }> = {};
     const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -350,7 +401,6 @@ export default function Analytics() {
       };
     });
 
-    // Populate students count
     students.forEach((s) => {
       const branch = (s.branch || s.department || 'CSE').toUpperCase().trim();
       const matchedKey = deptsList.find((d) => branch.includes(d)) || 'CSE';
@@ -359,7 +409,6 @@ export default function Analytics() {
       }
     });
 
-    // Create student -> dept map
     const studentDeptMap = new Map<string, string>();
     students.forEach((s) => {
       const branch = (s.branch || s.department || 'CSE').toUpperCase().trim();
@@ -367,11 +416,9 @@ export default function Analytics() {
       studentDeptMap.set(s.user_id, matchedKey);
     });
 
-    // Track placed student IDs per department
     const placedStudentsPerDept: Record<string, Set<string>> = {};
     deptsList.forEach((d) => (placedStudentsPerDept[d] = new Set()));
 
-    // Populate applications & statuses
     mappings.forEach((m) => {
       const dept = studentDeptMap.get(m.student_id) || 'CSE';
       if (deptMap[dept]) {
@@ -389,7 +436,6 @@ export default function Analytics() {
       }
     });
 
-    // Calculate rates
     return Object.values(deptMap).map((d) => {
       const placedCount = placedStudentsPerDept[d.department]?.size || d.selectedCount;
       const rate = d.studentsCount > 0 ? (placedCount / d.studentsCount) * 100 : 0;
@@ -411,7 +457,6 @@ export default function Analytics() {
       selected: number;
     }> = {};
 
-    // Populate from positions & companies
     positions.forEach((p) => {
       const name = p.companies?.company_name || 'Partner Company';
       const compId = p.company_id || name;
@@ -420,7 +465,6 @@ export default function Analytics() {
       }
     });
 
-    // Associate mappings
     const posIdToCompId = new Map<string, string>();
     positions.forEach((p) => {
       posIdToCompId.set(p.id, p.company_id || p.companies?.company_name || 'Partner Company');
@@ -519,21 +563,19 @@ export default function Analytics() {
     ].filter((item) => item.value > 0 || filteredMappings.length === 0);
   }, [filteredMappings]);
 
-  // 9. PACKAGE ANALYTICS (Parsing CTC/Salary from positions)
+  // 9. PACKAGE ANALYTICS
   const packageAnalytics = useMemo(() => {
     const salaries: number[] = [];
     positions.forEach((p) => {
       if (!p.salary) return;
       const str = p.salary.toUpperCase();
 
-      // Check for LPA format (e.g. 15 LPA, 8.5 LPA)
       const lpaMatch = str.match(/([\d.]+)\s*LPA/);
       if (lpaMatch) {
         salaries.push(parseFloat(lpaMatch[1]));
         return;
       }
 
-      // Check for K per month format (e.g. 15 K per month) -> convert to LPA
       const kMonthMatch = str.match(/([\d.]+)\s*K/);
       if (kMonthMatch) {
         const annualLpa = (parseFloat(kMonthMatch[1]) * 12) / 100;
@@ -541,7 +583,6 @@ export default function Analytics() {
         return;
       }
 
-      // Raw number format (e.g. 600000 -> 6.0 LPA)
       const numMatch = str.replace(/[^\d.]/g, '');
       if (numMatch && !isNaN(parseFloat(numMatch))) {
         const val = parseFloat(numMatch);
@@ -592,7 +633,6 @@ export default function Analytics() {
   const actionRequiredItems = useMemo(() => {
     const items = [];
 
-    // Pending student verifications
     const unverifiedCount = students.filter((s) => s.status && s.status !== 'verified').length;
     if (unverifiedCount > 0) {
       items.push({
@@ -603,18 +643,16 @@ export default function Analytics() {
       });
     }
 
-    // Applications awaiting mapping
     const pendingAppsCount = mappings.filter((m) => (m.status || '').toLowerCase() === 'applied').length;
     if (pendingAppsCount > 0) {
       items.push({
         id: 'pending-mappings',
         type: 'alert',
         label: `${pendingAppsCount} applications awaiting admin mapping`,
-        route: '/mapped-candidates'
+        route: '/mapped-candidates?status=applied'
       });
     }
 
-    // Open positions with 0 mapped candidates
     const mappedPosSet = new Set(mappings.map((m) => m.position_id));
     const emptyPosCount = positions.filter((p) => {
       const st = (p.status || 'OPEN').toUpperCase();
@@ -630,18 +668,16 @@ export default function Analytics() {
       });
     }
 
-    // Scheduled interviews awaiting feedback
     const scheduledInterviewsCount = mappings.filter((m) => (m.status || '').toLowerCase() === 'interview_scheduled').length;
     if (scheduledInterviewsCount > 0) {
       items.push({
         id: 'interviews-confirmation',
         type: 'warning',
         label: `${scheduledInterviewsCount} interviews scheduled needing confirmation`,
-        route: '/mapped-candidates'
+        route: '/mapped-candidates?status=interview_scheduled'
       });
     }
 
-    // Fallback default actions if zero tasks pending
     if (items.length === 0) {
       items.push({
         id: 'all-clear',
@@ -697,7 +733,6 @@ export default function Analytics() {
     return `${Math.floor(hours / 24)}d ago`;
   }
 
-  // Unique list of companies for filters
   const companyOptions = useMemo(() => {
     return Array.from(new Set(companies.map((c) => c.company_name)));
   }, [companies]);
@@ -728,7 +763,6 @@ export default function Analytics() {
             </p>
           </div>
 
-          {/* Quick Actions */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={fetchAllAnalyticsData}
@@ -768,7 +802,6 @@ export default function Analytics() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                {/* Year Filter */}
                 <select
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
@@ -779,7 +812,6 @@ export default function Analytics() {
                   <option value="2025">Year: 2025</option>
                 </select>
 
-                {/* Department Filter */}
                 <select
                   value={filterDepartment}
                   onChange={(e) => setFilterDepartment(e.target.value)}
@@ -794,7 +826,6 @@ export default function Analytics() {
                   <option value="CIVIL">CIVIL</option>
                 </select>
 
-                {/* Company Filter */}
                 <select
                   value={filterCompany}
                   onChange={(e) => setFilterCompany(e.target.value)}
@@ -806,7 +837,6 @@ export default function Analytics() {
                   ))}
                 </select>
 
-                {/* Job Status Filter */}
                 <select
                   value={filterJobStatus}
                   onChange={(e) => setFilterJobStatus(e.target.value)}
@@ -820,7 +850,7 @@ export default function Analytics() {
               </div>
             </motion.div>
 
-            {/* 1. TOP KPI CARDS (6 Placement-specific Metrics) */}
+            {/* 1. TOP KPI CARDS */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
               {/* Total Students */}
               <motion.div
@@ -861,7 +891,8 @@ export default function Analytics() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all"
+                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                onClick={() => navigate('/jobs')}
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-gray-500">Open Positions</span>
@@ -873,38 +904,46 @@ export default function Analytics() {
                 <p className="text-[10px] text-emerald-600 font-semibold mt-1">Active Hiring Roles</p>
               </motion.div>
 
-              {/* Total Applications */}
+              {/* Total Applications (Clickable to open Applied Candidates) */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all"
+                onClick={() => openStatusCandidatesModal('Applied')}
+                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-500">Applications</span>
+                  <span className="text-xs font-bold text-gray-500 group-hover:text-blue-600">Applications</span>
                   <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
                     <Layers className="w-4 h-4" />
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-[#111111] font-mono">{totalApplicationsCount}</p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">Submissions</p>
+                <p className="text-[10px] text-blue-600 font-bold mt-1 group-hover:underline flex items-center gap-1">
+                  <span>Click to view</span>
+                  <ChevronRight className="w-3 h-3" />
+                </p>
               </motion.div>
 
-              {/* Students Placed */}
+              {/* Students Placed (Clickable to open Placed Candidates) */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all"
+                onClick={() => openStatusCandidatesModal('Selected / Placed')}
+                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-500">Students Placed</span>
+                  <span className="text-xs font-bold text-gray-500 group-hover:text-emerald-600">Students Placed</span>
                   <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-emerald-600 font-mono">{studentsPlacedCount}</p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">Selected Candidates</p>
+                <p className="text-[10px] text-emerald-600 font-bold mt-1 group-hover:underline flex items-center gap-1">
+                  <span>Click to view</span>
+                  <ChevronRight className="w-3 h-3" />
+                </p>
               </motion.div>
 
               {/* Placement Rate */}
@@ -970,7 +1009,7 @@ export default function Analytics() {
                 </div>
               </motion.div>
 
-              {/* Placement Funnel Progress Bar Card */}
+              {/* Placement Funnel Progress Bar Card (Interactive Click) */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -978,14 +1017,21 @@ export default function Analytics() {
               >
                 <div className="mb-4">
                   <h2 className="text-base font-extrabold text-[#111111]">Placement Funnel</h2>
-                  <p className="text-xs text-gray-500">Recruitment lifecycle conversion stages</p>
+                  <p className="text-xs text-gray-500">Click any stage to view candidate members</p>
                 </div>
 
                 <div className="space-y-4 my-auto">
                   {funnelData.map((item, idx) => (
-                    <div key={item.stage} className="space-y-1.5">
+                    <div
+                      key={item.stage}
+                      onClick={() => openStatusCandidatesModal(item.stage)}
+                      className="space-y-1.5 p-2 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group"
+                    >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-700">{item.stage}</span>
+                        <span className="font-bold text-gray-700 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                          <span>{item.stage}</span>
+                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </span>
                         <div className="flex items-center gap-2 font-mono">
                           <span className="font-extrabold text-[#111111]">{item.count}</span>
                           <span className="text-gray-400">({item.pct}%)</span>
@@ -1115,18 +1161,23 @@ export default function Analytics() {
               </motion.div>
             </div>
 
-            {/* 7. JOB STATUS & 8. APPLICATION STATUS */}
+            {/* 7. JOB STATUS & 8. APPLICATION STATUS (Interactive Clickable Slices and Rows) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* Application Status Donut Chart */}
+              {/* Application Status Donut Chart & List */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-6"
               >
-                <h2 className="text-base font-extrabold text-[#111111] mb-1">Application Status</h2>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-base font-extrabold text-[#111111]">Application Status</h2>
+                  <span className="text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] px-2 py-0.5 rounded-full border border-amber-200/60">
+                    Click status to view candidates
+                  </span>
+                </div>
                 <p className="text-xs text-gray-500 mb-4">Pipeline distribution</p>
 
-                <div className="h-[200px] w-full">
+                <div className="h-[200px] w-full cursor-pointer">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -1137,9 +1188,12 @@ export default function Analytics() {
                         outerRadius={85}
                         paddingAngle={4}
                         dataKey="value"
+                        onClick={(entry) => {
+                          if (entry && entry.name) openStatusCandidatesModal(entry.name);
+                        }}
                       >
                         {applicationStatusDistribution.map((entry, index) => (
-                          <Cell key={`app-cell-${index}`} fill={entry.color} />
+                          <Cell key={`app-cell-${index}`} fill={entry.color} className="hover:opacity-80 transition-opacity" />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -1147,14 +1201,25 @@ export default function Analytics() {
                   </ResponsiveContainer>
                 </div>
 
+                {/* Status Bar Rows - Fully Clickable */}
                 <div className="space-y-2 mt-2">
                   {applicationStatusDistribution.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div
+                      key={item.name}
+                      onClick={() => openStatusCandidatesModal(item.name)}
+                      className="flex items-center justify-between text-xs p-2.5 rounded-xl hover:bg-amber-50/80 cursor-pointer transition-all border border-transparent hover:border-amber-200/60 group"
+                      title={`Click to view all ${item.name} candidates`}
+                    >
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-gray-600 font-medium">{item.name}</span>
+                        <span className="text-gray-700 font-bold group-hover:text-[#111111]">{item.name}</span>
                       </div>
-                      <span className="font-bold text-[#111111] font-mono">{item.value}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-[#111111] font-mono bg-gray-100 px-2 py-0.5 rounded-lg group-hover:bg-amber-100">
+                          {item.value}
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black group-hover:translate-x-0.5 transition-all" />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1192,7 +1257,7 @@ export default function Analytics() {
 
                 <div className="space-y-2 mt-2">
                   {jobStatusCounts.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div key={item.name} className="flex items-center justify-between text-xs p-2 rounded-xl">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                         <span className="text-gray-600 font-medium">{item.name}</span>
@@ -1395,6 +1460,146 @@ export default function Analytics() {
           </>
         )}
       </div>
+
+      {/* INTERACTIVE CANDIDATE DRILL-DOWN MODAL */}
+      <AnimatePresence>
+        {selectedStatusModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-3xl shadow-2xl border border-gray-200/90 w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-100 bg-gray-50/60 flex items-center justify-between shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[var(--gold-medium)]" />
+                    <h3 className="text-lg font-extrabold text-[#111111]">
+                      {selectedStatusModal.name} Candidates
+                    </h3>
+                    <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-600 rounded-full border border-blue-200 font-mono">
+                      {activeStatusCandidates.length} Members
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Student members currently registered under {selectedStatusModal.name} status
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setSelectedStatusModal(null)}
+                  className="p-2 rounded-xl text-gray-400 hover:text-black hover:bg-gray-200/60 transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search input inside modal */}
+              <div className="p-4 border-b border-gray-100 bg-white shrink-0">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={modalSearchQuery}
+                    onChange={(e) => setModalSearchQuery(e.target.value)}
+                    placeholder="Search candidate name, email, department, or company..."
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-[var(--gold-medium)]"
+                  />
+                </div>
+              </div>
+
+              {/* Candidate Member List */}
+              <div className="p-6 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
+                {activeStatusCandidates.length > 0 ? (
+                  activeStatusCandidates.map((cand) => (
+                    <div
+                      key={cand.mappingId}
+                      className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80 hover:bg-gray-100/60 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        {/* Student Avatar */}
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#111111] to-black text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {cand.studentName.substring(0, 2).toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-xs font-extrabold text-[#111111]">{cand.studentName}</h4>
+                            <span className="px-2 py-0.5 text-[10px] font-bold bg-gray-200/80 text-gray-700 rounded-md font-mono">
+                              {cand.department}
+                            </span>
+                            {cand.cgpa !== 'N/A' && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono">
+                                CGPA: {cand.cgpa}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3 text-gray-400" />
+                              {cand.email}
+                            </span>
+                            <span className="flex items-center gap-1 font-semibold text-gray-700">
+                              <Briefcase className="w-3 h-3 text-gray-400" />
+                              {cand.jobRole} @ {cand.companyName}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status & Actions */}
+                      <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60">
+                        <span className="px-3 py-1 text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-mono">
+                          {(cand.status || 'applied').toUpperCase()}
+                        </span>
+
+                        <button
+                          onClick={() => {
+                            setSelectedStatusModal(null);
+                            navigate(`/mapped-candidates?status=${selectedStatusModal.code}`);
+                          }}
+                          className="px-3 py-1.5 bg-[#111111] text-white rounded-xl text-xs font-bold hover:bg-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        >
+                          <span>Manage</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-16 text-center text-xs text-gray-400 space-y-2">
+                    <Users className="w-8 h-8 text-gray-300 mx-auto stroke-1" />
+                    <p className="italic">No candidate members found in {selectedStatusModal.name} status.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between shrink-0">
+                <span className="text-xs text-gray-500 font-medium">
+                  Showing {activeStatusCandidates.length} candidate members
+                </span>
+
+                <button
+                  onClick={() => {
+                    const code = selectedStatusModal.code;
+                    setSelectedStatusModal(null);
+                    navigate(`/mapped-candidates?status=${code}`);
+                  }}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Open Full Candidate Pipeline</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <Toaster position="top-right" />
     </div>
   );

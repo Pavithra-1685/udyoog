@@ -13,6 +13,7 @@ export default function MappedCandidates() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const jobIdParam = searchParams.get('jobId');
+  const statusParam = searchParams.get('status');
 
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('faculty');
@@ -30,7 +31,7 @@ export default function MappedCandidates() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [jobFilter, setJobFilter] = useState(jobIdParam || 'all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(statusParam || 'all');
 
   const fetchData = async () => {
     setIsLoading(true);
