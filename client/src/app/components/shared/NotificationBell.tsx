@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, CheckCheck, Briefcase, Award, CheckCircle2, AlertCircle, Calendar, Sparkles, X, Check } from 'lucide-react';
+import { Bell, CheckCheck, Briefcase, Award, CheckCircle2, AlertCircle, Calendar, Sparkles, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { realtimeNotificationChannel } from '../../../lib/notificationService';
 import { toast } from 'sonner';
@@ -26,7 +26,39 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('student');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 1. Fetch current user & initial notifications
+  // Load from local storage cache initially
+  useEffect(() => {
+    try {
+      const savedAuth = localStorage.getItem('careerPathway_auth');
+      if (savedAuth) {
+        const parsed = JSON.parse(savedAuth);
+        if (parsed.role) setUserRole(parsed.role);
+        if (parsed.id || parsed.user_id) {
+          const uid = parsed.id || parsed.user_id;
+          setCurrentUserId(uid);
+          const cachedNotifs = localStorage.getItem(`udyoog_notifs_${uid}`);
+          if (cachedNotifs) {
+            setNotifications(JSON.parse(cachedNotifs));
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Helper to update notifications and sync to localStorage cache
+  const updateNotificationsState = (updater: (prev: NotificationItem[]) => NotificationItem[]) => {
+    setNotifications((prev) => {
+      const updated = updater(prev);
+      if (currentUserId) {
+        try {
+          localStorage.setItem(`udyoog_notifs_${currentUserId}`, JSON.stringify(updated.slice(0, 30)));
+        } catch {}
+      }
+      return updated;
+    });
+  };
+
+  // 1. Fetch current user & initial notifications from database
   useEffect(() => {
     let isSubscribed = true;
 
@@ -42,11 +74,10 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
             .eq('user_id', user.id)
             .maybeSingle();
 
-          const role = (profile?.role || user.user_metadata?.role || 'student') as any;
+          const role = (profile?.role || user.user_metadata?.role || userRole || 'student') as any;
           setUserRole(role);
 
-          // Fetch notifications from database
-          fetchNotifications(user.id, role);
+          fetchNotificationsFromDB(user.id, role);
         }
       } catch (err) {
         console.error('Notification bell init error:', err);
@@ -60,74 +91,76 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
     };
   }, []);
 
-  const fetchNotifications = async (userId: string, role: string) => {
+  const fetchNotificationsFromDB = async (userId: string, role: string) => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(25);
+        .limit(30);
 
-      // Filter by user or broadcast/role
-      const { data, error } = await query;
       if (!error && data && Array.isArray(data)) {
-        // Client side filtering to guarantee RLS or role matches
-        const filtered = data.filter((item: NotificationItem) => {
-          if (!item) return false;
-          if (!item.user_id) return true; // Broadcast
-          if (item.user_id === userId) return true;
-          if (role === 'admin' && typeof item.type === 'string' && item.type.includes('admin')) return true;
-          if (role === 'faculty' && typeof item.type === 'string' && item.type.includes('faculty')) return true;
-          return false;
+        const filtered = data.filter((item: NotificationItem) => isTargetForUser(item, userId, role));
+        updateNotificationsState((prev) => {
+          const combined = [...filtered];
+          for (const item of prev) {
+            if (!combined.some((c) => c.id === item.id)) {
+              combined.push(item);
+            }
+          }
+          return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         });
-        setNotifications(filtered);
       }
     } catch (err) {
-      console.warn('Notifications load fallback:', err);
+      console.warn('DB notification fetch warning:', err);
     }
   };
 
-  // 2. Setup Realtime Subscriptions (Dual: Postgres Changes + Channel Broadcast)
+  const isTargetForUser = (item: NotificationItem, userId: string | null, role: string) => {
+    if (!item) return false;
+    if (item.user_id && userId && (item.user_id === userId || item.user_id.toLowerCase() === userId.toLowerCase())) {
+      return true;
+    }
+    if (role === 'admin' && (item.type === 'admin_application' || !item.user_id)) {
+      return true;
+    }
+    if (role === 'faculty' && (item.type === 'faculty_application' || !item.user_id)) {
+      return true;
+    }
+    if (!item.user_id && role === 'student' && item.type !== 'admin_application' && item.type !== 'faculty_application') {
+      return true;
+    }
+    return false;
+  };
+
+  // 2. Setup Realtime Broadcast & Postgres Listener
   useEffect(() => {
     if (!currentUserId) return;
     let channel: any = null;
 
     try {
-      // Create channel and attach ALL listeners BEFORE calling .subscribe()
+      // 1. Listen on global broadcast channel
+      const broadcastSub = realtimeNotificationChannel.on(
+        'broadcast',
+        { event: 'new_notification' },
+        (event) => {
+          const newNotif = event?.payload as NotificationItem;
+          if (newNotif && isTargetForUser(newNotif, currentUserId, userRole)) {
+            handleIncomingNotification(newNotif);
+          }
+        }
+      );
+      broadcastSub.subscribe();
+
+      // 2. Listen on postgres changes
       channel = supabase
-        .channel(`udyoog_notifs_${currentUserId}`)
+        .channel(`db_notifs_${currentUserId}`)
         .on(
           'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications'
-          },
+          { event: 'INSERT', schema: 'public', table: 'notifications' },
           (payload) => {
             const newNotif = payload?.new as NotificationItem;
-            if (!newNotif) return;
-            if (
-              !newNotif.user_id ||
-              newNotif.user_id === currentUserId ||
-              (userRole === 'admin' && typeof newNotif.type === 'string' && newNotif.type.includes('admin')) ||
-              (userRole === 'faculty' && typeof newNotif.type === 'string' && newNotif.type.includes('faculty'))
-            ) {
-              handleIncomingNotification(newNotif);
-            }
-          }
-        )
-        .on(
-          'broadcast',
-          { event: 'new_notification' },
-          (event) => {
-            const newNotif = event?.payload as NotificationItem;
-            if (!newNotif) return;
-            if (
-              !newNotif.user_id ||
-              newNotif.user_id === currentUserId ||
-              (userRole === 'admin' && typeof newNotif.type === 'string' && newNotif.type.includes('admin')) ||
-              (userRole === 'faculty' && typeof newNotif.type === 'string' && newNotif.type.includes('faculty'))
-            ) {
+            if (newNotif && isTargetForUser(newNotif, currentUserId, userRole)) {
               handleIncomingNotification(newNotif);
             }
           }
@@ -147,13 +180,11 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   }, [currentUserId, userRole]);
 
   const handleIncomingNotification = (newNotif: NotificationItem) => {
-    setNotifications((prev) => {
-      // Prevent duplicates
+    updateNotificationsState((prev) => {
       if (prev.some((n) => n.id === newNotif.id)) return prev;
       return [newNotif, ...prev];
     });
 
-    // Instant toast feedback for live active user
     toast(newNotif.title, {
       description: newNotif.message,
       icon: '🔔',
@@ -176,12 +207,12 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
 
   const markAsRead = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setNotifications((prev) =>
+    updateNotificationsState((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
 
     try {
-      if (!id.startsWith('temp-')) {
+      if (!id.startsWith('temp-') && !id.startsWith('notif-')) {
         await supabase
           .from('notifications')
           .update({ is_read: true })
@@ -193,7 +224,7 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   };
 
   const markAllAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    updateNotificationsState((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
     try {
       if (currentUserId) {
@@ -211,7 +242,6 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
     markAsRead(item.id);
     setIsOpen(false);
 
-    // Route navigation based on user role and notification type
     if (userRole === 'student') {
       if (item.related_job_id) {
         navigate(`/jobs`);
@@ -269,7 +299,7 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl text-gray-700 hover:text-black hover:bg-gray-100 transition-all focus:outline-none"
+        className="relative p-2 rounded-xl text-gray-700 hover:text-black hover:bg-gray-100 transition-all focus:outline-none cursor-pointer"
         title="Notifications"
       >
         <Bell className="w-5 h-5" />

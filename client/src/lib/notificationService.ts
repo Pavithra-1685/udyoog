@@ -11,45 +11,55 @@ export interface NotificationPayload {
 
 // Global broadcast channel for instant real-time events across browsers
 export const realtimeNotificationChannel = supabase.channel('udyoog_realtime_notifications');
-// Note: Listeners call .on() before .subscribe() to satisfy Supabase Realtime lifecycle
 
 /**
  * Creates and persists a notification, broadcasting it in real time
  */
 export async function sendNotification(payload: NotificationPayload) {
   try {
-    // 1. Insert into Supabase notifications table
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert([{
-        user_id: payload.user_id || null,
-        type: payload.type,
-        title: payload.title,
-        message: payload.message,
-        related_job_id: payload.related_job_id || null,
-        related_application_id: payload.related_application_id || null,
-        is_read: false
-      }])
-      .select()
-      .maybeSingle();
+    const notifObj = {
+      id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+      user_id: payload.user_id || null,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      related_job_id: payload.related_job_id || null,
+      related_application_id: payload.related_application_id || null,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
 
-    if (error) {
-      console.warn('Notification table insert info:', error.message);
+    // 1. Try to insert into Supabase notifications table (if table exists)
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: payload.user_id || null,
+          type: payload.type,
+          title: payload.title,
+          message: payload.message,
+          related_job_id: payload.related_job_id || null,
+          related_application_id: payload.related_application_id || null,
+          is_read: false
+        }])
+        .select()
+        .maybeSingle();
+
+      if (!error && data) {
+        Object.assign(notifObj, data);
+      }
+    } catch (e) {
+      // Table doesn't exist yet or RLS restriction, fallback to live broadcast
     }
 
-    // 2. Broadcast via Supabase Realtime channel so UI updates instantly without page refresh
+    // 2. Broadcast via Supabase Realtime channel so UI updates instantly across ALL active browsers
     realtimeNotificationChannel.send({
       type: 'broadcast',
       event: 'new_notification',
-      payload: data || {
-        ...payload,
-        id: 'temp-' + Date.now(),
-        is_read: false,
-        created_at: new Date().toISOString()
-      }
+      payload: notifObj
     });
 
-    return data;
+    return notifObj;
   } catch (err: any) {
     console.error('Notification dispatch error:', err.message);
   }
@@ -57,7 +67,7 @@ export async function sendNotification(payload: NotificationPayload) {
 
 /**
  * 1. STUDENT APPLIES
- * Notifies Admins and relevant Faculty when a student submits an application
+ * Notifies Admins and Faculty when a student submits an application
  */
 export async function notifyStudentApplied({
   studentId,
@@ -75,50 +85,23 @@ export async function notifyStudentApplied({
   jobId: string;
 }) {
   try {
-    // Fetch Admins & Faculty user IDs
-    const { data: staffProfiles } = await supabase
-      .from('profiles')
-      .select('user_id, role, branch')
-      .in('role', ['admin', 'faculty']);
+    // Direct Broadcast to Admin Portal
+    await sendNotification({
+      user_id: null,
+      type: 'admin_application',
+      title: 'New application received',
+      message: `${studentName} applied for ${jobTitle} at ${companyName}`,
+      related_job_id: jobId
+    });
 
-    const admins = staffProfiles?.filter(p => p.role === 'admin') || [];
-    const facultyList = staffProfiles?.filter(p => p.role === 'faculty') || [];
-
-    // Notify Admins
-    for (const admin of admins) {
-      await sendNotification({
-        user_id: admin.user_id,
-        type: 'admin_application',
-        title: 'New application received',
-        message: `${studentName} applied for ${jobTitle} at ${companyName}`,
-        related_job_id: jobId
-      });
-    }
-
-    // Fallback broadcast if no specific admins listed
-    if (admins.length === 0) {
-      await sendNotification({
-        user_id: null,
-        type: 'admin_application',
-        title: 'New application received',
-        message: `${studentName} applied for ${jobTitle} at ${companyName}`,
-        related_job_id: jobId
-      });
-    }
-
-    // Notify Faculty (Matching department or all faculty)
-    const targetFaculty = facultyList.filter(f => !f.branch || f.branch === department || department.toLowerCase().includes((f.branch || '').toLowerCase()));
-    const finalFaculty = targetFaculty.length > 0 ? targetFaculty : facultyList;
-
-    for (const faculty of finalFaculty) {
-      await sendNotification({
-        user_id: faculty.user_id,
-        type: 'faculty_application',
-        title: 'New student application',
-        message: `${studentName} from ${department || 'General'} applied for ${jobTitle} at ${companyName}`,
-        related_job_id: jobId
-      });
-    }
+    // Direct Broadcast to Faculty Portal
+    await sendNotification({
+      user_id: null,
+      type: 'faculty_application',
+      title: 'New student application',
+      message: `${studentName} from ${department || 'General'} applied for ${jobTitle} at ${companyName}`,
+      related_job_id: jobId
+    });
   } catch (err: any) {
     console.error('Error sending student apply notification:', err);
   }
