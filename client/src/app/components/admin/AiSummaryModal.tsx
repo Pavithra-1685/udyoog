@@ -16,28 +16,28 @@ function FormattedAiContent({ summary }: { summary: string }) {
   const parseInlineMarkdown = (text: string) => {
     if (!text) return null;
     
-    // Clean up unbalanced markers like *text** -> **text**
-    const cleanText = text
-      .replace(/\*([^\*]+)\*\*/g, '**$1**')
-      .replace(/\*\*([^\*]+)\*/g, '**$1**');
+    let cleanText = text.trim();
+
+    // Strip surrounding asterisks from whole phrases like "*Finalize ML Engineer Job Description*"
+    cleanText = cleanText
+      .replace(/^\*+([^\*]+)\*+$/g, '$1')
+      .replace(/\*+([^\*]+)\*\*/g, '**$1**')
+      .replace(/\*\*([^\*]+)\*+/g, '**$1**');
 
     const parts = cleanText.split(/(\*\*.*?\*\*|\*.*?\*)/g);
     return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      if (!part) return null;
+
+      if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('*') && part.endsWith('*'))) {
+        const word = part.replace(/^\*+|\*+$/g, '').trim();
+        if (!word) return null;
         return (
           <strong key={i} className="font-bold text-[#111111]">
-            {part.slice(2, -2)}
+            {word}
           </strong>
         );
       }
-      if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
-        return (
-          <em key={i} className="italic text-gray-700">
-            {part.slice(1, -1)}
-          </em>
-        );
-      }
-      return part;
+      return part.replace(/^\*+|\*+$/g, '');
     });
   };
 
