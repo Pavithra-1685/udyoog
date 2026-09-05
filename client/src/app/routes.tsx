@@ -9,6 +9,7 @@ import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
 import ResetPassword from './pages/ResetPassword';
 import StudentDashboard from './pages/student/StudentDashboard';
+import StudentProgress from './pages/student/StudentProgress';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import FacultyAnalytics from './pages/faculty/FacultyAnalytics';
 import FacultyStudentDetail from './pages/faculty/FacultyStudentDetail';
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
 
       // Student-only routes
       { path: 'student-dashboard', element: <RoleGuard allowedRoles={['student']}><StudentDashboard /></RoleGuard> },
+      { path: 'student-progress', element: <RoleGuard allowedRoles={['student']}><StudentProgress /></RoleGuard> },
       { path: 'interview-prep', element: <RoleGuard allowedRoles={['student']}><InterviewPrep /></RoleGuard> },
 
       // Faculty-only routes
