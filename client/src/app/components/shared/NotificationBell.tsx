@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, CheckCheck, Briefcase, Award, CheckCircle2, AlertCircle, Calendar, Sparkles, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { realtimeNotificationChannel } from '../../../lib/notificationService';
+import { nativeBroadcastChannel, realtimeNotificationChannel } from '../../../lib/notificationService';
 import { toast } from 'sonner';
 
 interface NotificationItem {
@@ -26,25 +26,6 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   const [userRole, setUserRole] = useState<'admin' | 'faculty' | 'student'>('student');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load from local storage cache initially
-  useEffect(() => {
-    try {
-      const savedAuth = localStorage.getItem('careerPathway_auth');
-      if (savedAuth) {
-        const parsed = JSON.parse(savedAuth);
-        if (parsed.role) setUserRole(parsed.role);
-        if (parsed.id || parsed.user_id) {
-          const uid = parsed.id || parsed.user_id;
-          setCurrentUserId(uid);
-          const cachedNotifs = localStorage.getItem(`udyoog_notifs_${uid}`);
-          if (cachedNotifs) {
-            setNotifications(JSON.parse(cachedNotifs));
-          }
-        }
-      }
-    } catch {}
-  }, []);
-
   // Helper to update notifications and sync to localStorage cache
   const updateNotificationsState = (updater: (prev: NotificationItem[]) => NotificationItem[]) => {
     setNotifications((prev) => {
@@ -56,64 +37,6 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
       }
       return updated;
     });
-  };
-
-  // 1. Fetch current user & initial notifications from database
-  useEffect(() => {
-    let isSubscribed = true;
-
-    const init = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && isSubscribed) {
-          setCurrentUserId(user.id);
-
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          const role = (profile?.role || user.user_metadata?.role || userRole || 'student') as any;
-          setUserRole(role);
-
-          fetchNotificationsFromDB(user.id, role);
-        }
-      } catch (err) {
-        console.error('Notification bell init error:', err);
-      }
-    };
-
-    init();
-
-    return () => {
-      isSubscribed = false;
-    };
-  }, []);
-
-  const fetchNotificationsFromDB = async (userId: string, role: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-      if (!error && data && Array.isArray(data)) {
-        const filtered = data.filter((item: NotificationItem) => isTargetForUser(item, userId, role));
-        updateNotificationsState((prev) => {
-          const combined = [...filtered];
-          for (const item of prev) {
-            if (!combined.some((c) => c.id === item.id)) {
-              combined.push(item);
-            }
-          }
-          return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        });
-      }
-    } catch (err) {
-      console.warn('DB notification fetch warning:', err);
-    }
   };
 
   const isTargetForUser = (item: NotificationItem, userId: string | null, role: string) => {
@@ -133,64 +56,174 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
     return false;
   };
 
-  // 2. Setup Realtime Broadcast & Postgres Listener
+  // 1. Initial Load & Auth Sync
   useEffect(() => {
-    if (!currentUserId) return;
-    let channel: any = null;
+    let isSubscribed = true;
 
+    const init = async () => {
+      let uid: string | null = null;
+      let role: string = 'student';
+
+      try {
+        const savedAuth = localStorage.getItem('careerPathway_auth');
+        if (savedAuth) {
+          const parsed = JSON.parse(savedAuth);
+          if (parsed.role) role = parsed.role;
+          if (parsed.id || parsed.user_id) uid = parsed.id || parsed.user_id;
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && isSubscribed) {
+          uid = user.id;
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (profile?.role) role = profile.role;
+        }
+      } catch (err) {
+        console.error('Notification bell init error:', err);
+      }
+
+      if (isSubscribed) {
+        setCurrentUserId(uid);
+        setUserRole(role as any);
+
+        // Load cached notifications from global queue & user cache
+        loadInitialNotifications(uid, role);
+      }
+    };
+
+    init();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  const loadInitialNotifications = async (userId: string | null, role: string) => {
+    let initialList: NotificationItem[] = [];
+
+    // 1. Read from user-specific localStorage cache
+    if (userId) {
+      try {
+        const userCache = localStorage.getItem(`udyoog_notifs_${userId}`);
+        if (userCache) initialList = JSON.parse(userCache);
+      } catch {}
+    }
+
+    // 2. Read from global notification queue in localStorage
     try {
-      // 1. Listen on global broadcast channel
-      const broadcastSub = realtimeNotificationChannel.on(
-        'broadcast',
-        { event: 'new_notification' },
-        (event) => {
-          const newNotif = event?.payload as NotificationItem;
-          if (newNotif && isTargetForUser(newNotif, currentUserId, userRole)) {
-            handleIncomingNotification(newNotif);
+      const globalQueue = localStorage.getItem('udyoog_global_notif_queue');
+      if (globalQueue) {
+        const parsed = JSON.parse(globalQueue) as NotificationItem[];
+        for (const item of parsed) {
+          if (isTargetForUser(item, userId, role) && !initialList.some((c) => c.id === item.id)) {
+            initialList.push(item);
           }
         }
-      );
-      broadcastSub.subscribe();
+      }
+    } catch {}
 
-      // 2. Listen on postgres changes
-      channel = supabase
-        .channel(`db_notifs_${currentUserId}`)
+    // Sort by newest first
+    initialList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setNotifications(initialList);
+
+    // 3. Try to fetch persistent DB notifications if table exists
+    if (userId) {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (!error && data && Array.isArray(data)) {
+          const dbFiltered = data.filter((item: NotificationItem) => isTargetForUser(item, userId, role));
+          updateNotificationsState((prev) => {
+            const combined = [...dbFiltered];
+            for (const item of prev) {
+              if (!combined.some((c) => c.id === item.id)) {
+                combined.push(item);
+              }
+            }
+            return combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          });
+        }
+      } catch (e) {}
+    }
+  };
+
+  // 2. Multi-Engine Real-Time Listeners (Same-Window + Cross-Tab + Storage + Supabase Realtime)
+  useEffect(() => {
+    const handleNotification = (notif: NotificationItem) => {
+      if (notif && isTargetForUser(notif, currentUserId, userRole)) {
+        updateNotificationsState((prev) => {
+          if (prev.some((n) => n.id === notif.id)) return prev;
+          return [notif, ...prev];
+        });
+
+        toast(notif.title, {
+          description: notif.message,
+          icon: '🔔',
+          duration: 5000
+        });
+      }
+    };
+
+    // Engine A: Same-Window CustomEvent
+    const customEventHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as NotificationItem;
+      if (detail) handleNotification(detail);
+    };
+    window.addEventListener('udyoog_notification_event', customEventHandler);
+
+    // Engine B: Native Cross-Tab BroadcastChannel
+    if (nativeBroadcastChannel) {
+      nativeBroadcastChannel.onmessage = (event) => {
+        if (event.data) handleNotification(event.data);
+      };
+    }
+
+    // Engine C: Storage Event Listener
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === 'udyoog_global_notif_queue' && e.newValue) {
+        try {
+          const list = JSON.parse(e.newValue) as NotificationItem[];
+          if (list && list.length > 0) {
+            handleNotification(list[0]);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', storageHandler);
+
+    // Engine D: Supabase Realtime Fallback
+    let supabaseChannel: any = null;
+    try {
+      supabaseChannel = supabase
+        .channel(`db_notifs_${currentUserId || 'guest'}`)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'notifications' },
           (payload) => {
             const newNotif = payload?.new as NotificationItem;
-            if (newNotif && isTargetForUser(newNotif, currentUserId, userRole)) {
-              handleIncomingNotification(newNotif);
-            }
+            if (newNotif) handleNotification(newNotif);
           }
         )
         .subscribe();
-    } catch (err) {
-      console.warn('Realtime subscription fallback error:', err);
-    }
+    } catch {}
 
     return () => {
-      if (channel) {
-        try {
-          supabase.removeChannel(channel);
-        } catch {}
+      window.removeEventListener('udyoog_notification_event', customEventHandler);
+      window.removeEventListener('storage', storageHandler);
+      if (supabaseChannel) {
+        try { supabase.removeChannel(supabaseChannel); } catch {}
       }
     };
   }, [currentUserId, userRole]);
-
-  const handleIncomingNotification = (newNotif: NotificationItem) => {
-    updateNotificationsState((prev) => {
-      if (prev.some((n) => n.id === newNotif.id)) return prev;
-      return [newNotif, ...prev];
-    });
-
-    toast(newNotif.title, {
-      description: newNotif.message,
-      icon: '🔔',
-      duration: 5000
-    });
-  };
 
   // Close dropdown on click outside
   useEffect(() => {

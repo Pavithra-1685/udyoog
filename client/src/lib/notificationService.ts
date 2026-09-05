@@ -9,11 +9,16 @@ export interface NotificationPayload {
   related_application_id?: string | null;
 }
 
-// Global broadcast channel for instant real-time events across browsers
+// Native HTML5 BroadcastChannel for zero-latency cross-tab realtime messaging
+export const nativeBroadcastChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  ? new BroadcastChannel('udyoog_native_notifications')
+  : null;
+
+// Global Supabase broadcast channel fallback
 export const realtimeNotificationChannel = supabase.channel('udyoog_realtime_notifications');
 
 /**
- * Creates and persists a notification, broadcasting it in real time
+ * Creates and dispatches a notification across local event buses and remote databases
  */
 export async function sendNotification(payload: NotificationPayload) {
   try {
@@ -29,7 +34,25 @@ export async function sendNotification(payload: NotificationPayload) {
       created_at: new Date().toISOString()
     };
 
-    // 1. Try to insert into Supabase notifications table (if table exists)
+    // 1. Save to Global LocalStorage Queue (so every tab reads & syncs instantly)
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('udyoog_global_notif_queue');
+        const list = stored ? JSON.parse(stored) : [];
+        list.unshift(notifObj);
+        localStorage.setItem('udyoog_global_notif_queue', JSON.stringify(list.slice(0, 50)));
+      } catch (err) {}
+
+      // 2. Dispatch same-window CustomEvent
+      window.dispatchEvent(new CustomEvent('udyoog_notification_event', { detail: notifObj }));
+
+      // 3. Dispatch native cross-tab BroadcastChannel event
+      if (nativeBroadcastChannel) {
+        nativeBroadcastChannel.postMessage(notifObj);
+      }
+    }
+
+    // 4. Insert into Supabase notifications table (if table exists)
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -48,16 +71,16 @@ export async function sendNotification(payload: NotificationPayload) {
       if (!error && data) {
         Object.assign(notifObj, data);
       }
-    } catch (e) {
-      // Table doesn't exist yet or RLS restriction, fallback to live broadcast
-    }
+    } catch (e) {}
 
-    // 2. Broadcast via Supabase Realtime channel so UI updates instantly across ALL active browsers
-    realtimeNotificationChannel.send({
-      type: 'broadcast',
-      event: 'new_notification',
-      payload: notifObj
-    });
+    // 5. Try Supabase Realtime WebSocket broadcast
+    try {
+      realtimeNotificationChannel.send({
+        type: 'broadcast',
+        event: 'new_notification',
+        payload: notifObj
+      });
+    } catch (e) {}
 
     return notifObj;
   } catch (err: any) {
