@@ -11,7 +11,7 @@ export interface NotificationPayload {
 
 // Global broadcast channel for instant real-time events across browsers
 export const realtimeNotificationChannel = supabase.channel('udyoog_realtime_notifications');
-realtimeNotificationChannel.subscribe();
+// Note: Listeners call .on() before .subscribe() to satisfy Supabase Realtime lifecycle
 
 /**
  * Creates and persists a notification, broadcasting it in real time

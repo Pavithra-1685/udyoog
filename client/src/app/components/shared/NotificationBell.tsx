@@ -90,9 +90,9 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
   useEffect(() => {
     if (!currentUserId) return;
 
-    // Listen to Supabase DB Postgres Changes on 'notifications' table
-    const dbSubscription = supabase
-      .channel(`db_notifications_${currentUserId}`)
+    // Create channel and attach ALL listeners BEFORE calling .subscribe()
+    const channel = supabase
+      .channel(`udyoog_notifs_${currentUserId}`)
       .on(
         'postgres_changes',
         {
@@ -112,28 +112,25 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
           }
         }
       )
+      .on(
+        'broadcast',
+        { event: 'new_notification' },
+        (event) => {
+          const newNotif = event.payload as NotificationItem;
+          if (
+            !newNotif.user_id ||
+            newNotif.user_id === currentUserId ||
+            (userRole === 'admin' && newNotif.type?.includes('admin')) ||
+            (userRole === 'faculty' && newNotif.type?.includes('faculty'))
+          ) {
+            handleIncomingNotification(newNotif);
+          }
+        }
+      )
       .subscribe();
 
-    // Listen to direct broadcast channel
-    const broadcastListener = realtimeNotificationChannel.on(
-      'broadcast',
-      { event: 'new_notification' },
-      (event) => {
-        const newNotif = event.payload as NotificationItem;
-        if (
-          !newNotif.user_id ||
-          newNotif.user_id === currentUserId ||
-          (userRole === 'admin' && newNotif.type?.includes('admin')) ||
-          (userRole === 'faculty' && newNotif.type?.includes('faculty'))
-        ) {
-          handleIncomingNotification(newNotif);
-        }
-      }
-    );
-
     return () => {
-      dbSubscription.unsubscribe();
-      broadcastListener.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [currentUserId, userRole]);
 
