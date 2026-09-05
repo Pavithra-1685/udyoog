@@ -25,14 +25,14 @@ function FormattedAiContent({ summary }: { summary: string }) {
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
         return (
-          <strong key={i} className="font-semibold text-gray-900">
+          <strong key={i} className="font-bold text-[#111111]">
             {part.slice(2, -2)}
           </strong>
         );
       }
       if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
         return (
-          <em key={i} className="italic text-gray-800">
+          <em key={i} className="italic text-gray-700">
             {part.slice(1, -1)}
           </em>
         );
@@ -61,12 +61,12 @@ function FormattedAiContent({ summary }: { summary: string }) {
     const bodyRows = dataRows.slice(1);
 
     return (
-      <div className="overflow-x-auto my-3 rounded-xl border border-gray-200 shadow-xs bg-white">
+      <div className="overflow-x-auto my-4 rounded-2xl border border-gray-200 shadow-sm bg-white">
         <table className="w-full text-left border-collapse text-xs md:text-sm">
           <thead>
-            <tr className="bg-gray-100/90 border-b border-gray-200 text-gray-800 font-bold uppercase tracking-wider text-[11px]">
+            <tr className="bg-[#111111] text-white border-b border-gray-800 uppercase tracking-widest text-[10px]">
               {headers.map((h, i) => (
-                <th key={i} className="px-3.5 py-2.5 font-bold">
+                <th key={i} className="px-4 py-3 font-extrabold text-[var(--gold-medium)]">
                   {parseInlineMarkdown(h)}
                 </th>
               ))}
@@ -74,9 +74,9 @@ function FormattedAiContent({ summary }: { summary: string }) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {bodyRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-gray-50/70 transition-colors">
+              <tr key={rIdx} className="hover:bg-amber-500/5 transition-colors">
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-3.5 py-2.5 text-gray-700 leading-relaxed">
+                  <td key={cIdx} className="px-4 py-3 text-gray-800 leading-relaxed font-medium">
                     {parseInlineMarkdown(cell)}
                   </td>
                 ))}
@@ -145,10 +145,13 @@ function FormattedAiContent({ summary }: { summary: string }) {
     sections.push(currentSection);
   }
 
-  const getSectionBadge = (title: string) => {
+  const getSectionBadge = (title: string, index: number) => {
     const lower = title.toLowerCase();
+    const num = (index + 1).toString().padStart(2, '0');
+
     if (lower.includes('executive') || lower.includes('summary') || lower.includes('overview')) {
       return { 
+        num,
         icon: <Sparkles className="w-4 h-4 text-amber-600" />, 
         bg: 'bg-amber-50 text-amber-800 border-amber-200/80',
         borderAccent: 'border-l-4 border-l-amber-500'
@@ -156,6 +159,7 @@ function FormattedAiContent({ summary }: { summary: string }) {
     }
     if (lower.includes('timeline') || lower.includes('history')) {
       return { 
+        num,
         icon: <Calendar className="w-4 h-4 text-blue-600" />, 
         bg: 'bg-blue-50 text-blue-800 border-blue-200/80',
         borderAccent: 'border-l-4 border-l-blue-500'
@@ -163,6 +167,7 @@ function FormattedAiContent({ summary }: { summary: string }) {
     }
     if (lower.includes('opportunity') || lower.includes('role') || lower.includes('open')) {
       return { 
+        num,
         icon: <Briefcase className="w-4 h-4 text-emerald-600" />, 
         bg: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
         borderAccent: 'border-l-4 border-l-emerald-500'
@@ -170,6 +175,7 @@ function FormattedAiContent({ summary }: { summary: string }) {
     }
     if (lower.includes('next') || lower.includes('step') || lower.includes('action')) {
       return { 
+        num,
         icon: <Target className="w-4 h-4 text-purple-600" />, 
         bg: 'bg-purple-50 text-purple-800 border-purple-200/80',
         borderAccent: 'border-l-4 border-l-purple-500'
@@ -177,12 +183,14 @@ function FormattedAiContent({ summary }: { summary: string }) {
     }
     if (lower.includes('blocker') || lower.includes('critical') || lower.includes('risk')) {
       return { 
+        num,
         icon: <ShieldAlert className="w-4 h-4 text-red-600" />, 
         bg: 'bg-red-50 text-red-800 border-red-200/80',
         borderAccent: 'border-l-4 border-l-red-500'
       };
     }
     return { 
+      num,
       icon: <FileText className="w-4 h-4 text-gray-600" />, 
       bg: 'bg-gray-100 text-gray-800 border-gray-200',
       borderAccent: 'border-l-4 border-l-gray-400'
@@ -190,23 +198,29 @@ function FormattedAiContent({ summary }: { summary: string }) {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {sections.map((sec, idx) => {
-        const badge = getSectionBadge(sec.title);
+        const badge = getSectionBadge(sec.title, idx);
         return (
           <div
             key={idx}
-            className={`p-5 rounded-2xl bg-white border border-gray-200/80 shadow-xs hover:shadow-md transition-all duration-200 ${badge.borderAccent}`}
+            className={`p-6 rounded-3xl bg-white border border-gray-200/90 shadow-sm hover:shadow-md transition-all duration-200 ${badge.borderAccent}`}
           >
-            <div className="flex items-center gap-3 mb-3 border-b border-gray-100 pb-3">
-              <div className={`p-2 rounded-xl border flex items-center justify-center ${badge.bg}`}>
-                {badge.icon}
+            <div className="flex items-center justify-between gap-3 mb-4 border-b border-gray-100 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-2xl border flex items-center justify-center ${badge.bg}`}>
+                  {badge.icon}
+                </div>
+                <h4 className="font-extrabold text-lg text-[#111111] tracking-tight">
+                  {sec.title}
+                </h4>
               </div>
-              <h4 className="font-bold text-base text-gray-900 tracking-tight">
-                {sec.title}
-              </h4>
+              <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-2.5 py-1 bg-gray-50 rounded-lg border border-gray-100">
+                Phase {badge.num}
+              </span>
             </div>
-            <div className="space-y-2.5 text-gray-600 text-sm leading-relaxed">
+
+            <div className="space-y-3 text-gray-700 text-sm leading-relaxed">
               {sec.content.map((item, itemIdx) => {
                 if (typeof item === 'object' && item.type === 'table') {
                   return <div key={itemIdx}>{renderMarkdownTable(item.lines)}</div>;
@@ -214,20 +228,27 @@ function FormattedAiContent({ summary }: { summary: string }) {
 
                 const lineStr = item as string;
                 const trimmedP = lineStr.trim();
-                const isBullet = /^[-\*•]\s/.test(trimmedP) || /^\*\d+\./.test(trimmedP);
+                const isBullet = /^[-\*•]\s/.test(trimmedP) || /^\*\d+\./.test(trimmedP) || /^\d+\.\s/.test(trimmedP);
                 const cleanPara = trimmedP
                   .replace(/^[-\*•]\s*/, '')
-                  .replace(/^\*\d+\.\s*/, '');
+                  .replace(/^\*\d+\.\s*/, '')
+                  .replace(/^\d+\.\s*/, '');
 
                 if (isBullet) {
                   return (
-                    <div key={itemIdx} className="flex items-start gap-2.5 pl-1">
-                      <span className="text-[var(--gold-medium)] font-bold text-base leading-none mt-1 shrink-0">•</span>
-                      <span className="flex-1">{parseInlineMarkdown(cleanPara)}</span>
+                    <div key={itemIdx} className="flex items-start gap-3 p-3 rounded-2xl bg-gray-50/80 border border-gray-100 hover:border-gray-200 transition-all">
+                      <div className="w-2 h-2 rounded-full bg-[var(--gold-medium)] mt-1.5 shrink-0 shadow-xs" />
+                      <div className="flex-1 text-gray-800 text-sm leading-relaxed">
+                        {parseInlineMarkdown(cleanPara)}
+                      </div>
                     </div>
                   );
                 }
-                return <p key={itemIdx}>{parseInlineMarkdown(cleanPara)}</p>;
+                return (
+                  <p key={itemIdx} className="text-gray-800 leading-relaxed font-outfit">
+                    {parseInlineMarkdown(cleanPara)}
+                  </p>
+                );
               })}
             </div>
           </div>
