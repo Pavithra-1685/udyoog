@@ -7,6 +7,8 @@ import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
 
+import { notifyStudentApplied } from '../../../lib/notificationService';
+
 export default function Jobs() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
@@ -113,6 +115,18 @@ export default function Jobs() {
 
       if (error) throw error;
       toast.success('Successfully applied! Your profile has been shared with the recruiters.');
+
+      // Dispatch Real-time Notifications to Admin and Faculty
+      const targetJob = jobs.find(j => j.id === jobId);
+      const { data: studentProf } = await supabase.from('profiles').select('full_name, branch, graduation').eq('user_id', userId).maybeSingle();
+      notifyStudentApplied({
+        studentId: userId,
+        studentName: studentProf?.full_name || 'Student',
+        department: studentProf?.branch || studentProf?.graduation || 'General',
+        jobTitle: targetJob?.role || 'Job Role',
+        companyName: targetJob?.companies?.company_name || 'Partner Company',
+        jobId: jobId
+      });
 
       // Refresh student mappings
       const { data: maps } = await supabase

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LayoutDashboard, BarChart3, User, LogOut, Menu, X, Users, Search, BrainCircuit, Briefcase, Layers } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
+import NotificationBell from './NotificationBell';
+
 interface NavigationProps {
   userEmail: string;
 }
@@ -124,15 +126,21 @@ export default function Navigation({ userEmail }: NavigationProps) {
                 </button>
               );
             })}
+
+            <div className="h-5 w-[1px] bg-gray-200 mx-1" />
+
+            <NotificationBell userEmail={userEmail} />
+
             <button
               onClick={handleLogout}
-              className="p-2 hover:text-red-600 rounded-xl transition-all ml-2 text-gray-400"
+              className="p-2 hover:text-red-600 rounded-xl transition-all text-gray-400"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            <NotificationBell userEmail={userEmail} />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-xl bg-gray-100 text-[#111111]"

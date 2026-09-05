@@ -7,6 +7,8 @@ import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
 
+import { notifyAdminMapped, notifyFacultyRecommended } from '../../../lib/notificationService';
+
 export default function TalentPool() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -222,6 +224,17 @@ export default function TalentPool() {
       if (error) throw error;
       
       toast.success('Candidate mapped successfully!');
+
+      // Dispatch Real-time Notification to Student
+      const targetJob = activeJobs.find(j => j.id === jobId);
+      const jobTitle = targetJob?.role || 'Job Role';
+      const companyName = targetJob?.companies?.company_name || 'Partner Company';
+
+      if (userRole === 'faculty') {
+        notifyFacultyRecommended({ studentId, jobTitle, companyName, jobId });
+      } else {
+        notifyAdminMapped({ studentId, jobTitle, companyName, jobId });
+      }
       
       // Refresh mappings
       const { data: updatedMappings } = await supabase.from('mapped_candidates').select('*');

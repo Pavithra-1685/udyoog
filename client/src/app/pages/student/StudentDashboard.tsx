@@ -8,6 +8,8 @@ import { supabase } from '../../../lib/supabase';
 import { Loader2, BrainCircuit, LayoutDashboard, UserCircle, Settings, ArrowRight, Sparkles, TrendingUp, Award, Briefcase, MapPin, IndianRupee, CheckCircle2 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 
+import { notifyStudentApplied } from '../../../lib/notificationService';
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState('');
@@ -59,6 +61,17 @@ export default function StudentDashboard() {
 
       if (error) throw error;
       toast.success('Successfully applied! Your profile has been shared with recruiters.');
+
+      // Dispatch Real-time Notifications to Admin and Faculty
+      const targetJob = activeJobs.find(j => j.id === jobId);
+      notifyStudentApplied({
+        studentId: profile.user_id,
+        studentName: profile.full_name || 'Student',
+        department: profile.branch || profile.graduation || 'General',
+        jobTitle: targetJob?.role || 'Job Role',
+        companyName: targetJob?.companies?.company_name || 'Partner Company',
+        jobId: jobId
+      });
 
       // Refresh student mappings
       const { data: maps } = await supabase

@@ -7,6 +7,8 @@ import { supabase } from '../../../lib/supabase';
 import Navigation from '../../components/shared/Navigation';
 import { toast, Toaster } from 'sonner';
 
+import { notifyStatusChanged, notifyFacultyRecommended, notifyAdminMapped } from '../../../lib/notificationService';
+
 export default function MappedCandidates() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -119,6 +121,23 @@ export default function MappedCandidates() {
 
       if (error) throw error;
       toast.success(`Pipeline stage updated to ${newStatus.toUpperCase()}`);
+
+      // Dispatch Real-time Notification to Student
+      const item = combinedData.find(c => c.id === mappingId);
+      if (item?.student?.user_id) {
+        const studentId = item.student.user_id;
+        const jobTitle = item.job?.role || 'Job Role';
+        const companyName = item.job?.companies?.company_name || 'Partner Company';
+        const jobId = item.job?.id;
+
+        if (newStatus === 'faculty_recommended' || newStatus === 'recommended') {
+          notifyFacultyRecommended({ studentId, jobTitle, companyName, jobId });
+        } else if (newStatus === 'mapped') {
+          notifyAdminMapped({ studentId, jobTitle, companyName, jobId });
+        } else {
+          notifyStatusChanged({ studentId, status: newStatus, jobTitle, companyName, jobId });
+        }
+      }
       
       // Update locally
       setMappings(prev => prev.map(m => m.id === mappingId ? { ...m, status: newStatus } : m));
