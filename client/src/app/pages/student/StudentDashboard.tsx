@@ -252,14 +252,8 @@ export default function StudentDashboard() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-[var(--gold-medium)]" />
-              <span className="text-xs font-mono font-bold text-[var(--gold-medium)] uppercase tracking-wider">
-                UDYOOG Student Portal
-              </span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111111] tracking-tight">
-              Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
+              Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}!
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
               Here is your current placement snapshot, active opportunities, and recommended next steps.
@@ -538,7 +532,7 @@ export default function StudentDashboard() {
                     <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-md ${
                       item.isComplete ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'
                     }`}>
-                      {item.isComplete ? '✓ Complete' : `⚠ ${item.hint}`}
+                      {item.isComplete ? 'Complete' : item.hint}
                     </span>
                   </div>
                 ))}
