@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -172,6 +173,18 @@ export default function Analytics() {
       window.removeEventListener('udyoog_notification_event', handleNativeEvent);
     };
   }, []);
+
+  // Lock background scrolling when drill-down modal is open
+  useEffect(() => {
+    if (selectedStatusModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedStatusModal]);
 
   // Open Candidate Detail Modal on click
   const openStatusCandidatesModal = (statusName: string) => {
@@ -1461,144 +1474,152 @@ export default function Analytics() {
         )}
       </div>
 
-      {/* INTERACTIVE CANDIDATE DRILL-DOWN MODAL */}
-      <AnimatePresence>
-        {selectedStatusModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl shadow-2xl border border-gray-200/90 w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]"
+      {/* INTERACTIVE CANDIDATE DRILL-DOWN MODAL (PORTAL TO BODY FOR PERFECT CENTERING) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedStatusModal && (
+            <div
+              className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
+              onClick={() => setSelectedStatusModal(null)}
             >
-              {/* Modal Header */}
-              <div className="p-6 border-b border-gray-100 bg-gray-50/60 flex items-center justify-between shrink-0">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[var(--gold-medium)]" />
-                    <h3 className="text-lg font-extrabold text-[#111111]">
-                      {selectedStatusModal.name} Candidates
-                    </h3>
-                    <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-600 rounded-full border border-blue-200 font-mono">
-                      {activeStatusCandidates.length} Members
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Student members currently registered under {selectedStatusModal.name} status
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setSelectedStatusModal(null)}
-                  className="p-2 rounded-xl text-gray-400 hover:text-black hover:bg-gray-200/60 transition-all cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Search input inside modal */}
-              <div className="p-4 border-b border-gray-100 bg-white shrink-0">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    value={modalSearchQuery}
-                    onChange={(e) => setModalSearchQuery(e.target.value)}
-                    placeholder="Search candidate name, email, department, or company..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-[var(--gold-medium)]"
-                  />
-                </div>
-              </div>
-
-              {/* Candidate Member List */}
-              <div className="p-6 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
-                {activeStatusCandidates.length > 0 ? (
-                  activeStatusCandidates.map((cand) => (
-                    <div
-                      key={cand.mappingId}
-                      className="p-4 rounded-2xl bg-gray-50/70 border border-gray-200/80 hover:bg-gray-100/60 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-3.5 min-w-0">
-                        {/* Student Avatar */}
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#111111] to-black text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                          {cand.studentName.substring(0, 2).toUpperCase()}
-                        </div>
-
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-xs font-extrabold text-[#111111]">{cand.studentName}</h4>
-                            <span className="px-2 py-0.5 text-[10px] font-bold bg-gray-200/80 text-gray-700 rounded-md font-mono">
-                              {cand.department}
-                            </span>
-                            {cand.cgpa !== 'N/A' && (
-                              <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono">
-                                CGPA: {cand.cgpa}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              {cand.email}
-                            </span>
-                            <span className="flex items-center gap-1 font-semibold text-gray-700">
-                              <Briefcase className="w-3 h-3 text-gray-400" />
-                              {cand.jobRole} @ {cand.companyName}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Status & Actions */}
-                      <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60">
-                        <span className="px-3 py-1 text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-mono">
-                          {(cand.status || 'applied').toUpperCase()}
-                        </span>
-
-                        <button
-                          onClick={() => {
-                            setSelectedStatusModal(null);
-                            navigate(`/mapped-candidates?status=${selectedStatusModal.code}`);
-                          }}
-                          className="px-3 py-1.5 bg-[#111111] text-white rounded-xl text-xs font-bold hover:bg-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
-                        >
-                          <span>Manage</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
-                      </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-200/90 overflow-hidden flex flex-col max-h-[85vh] my-auto text-left"
+              >
+                {/* Modal Header */}
+                <div className="p-5 sm:p-6 border-b border-gray-100 bg-gray-50/70 flex items-center justify-between shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-[var(--gold-medium)]" />
+                      <h3 className="text-base sm:text-lg font-extrabold text-[#111111]">
+                        {selectedStatusModal.name} Candidates
+                      </h3>
+                      <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-600 rounded-full border border-blue-200 font-mono">
+                        {activeStatusCandidates.length} Members
+                      </span>
                     </div>
-                  ))
-                ) : (
-                  <div className="py-16 text-center text-xs text-gray-400 space-y-2">
-                    <Users className="w-8 h-8 text-gray-300 mx-auto stroke-1" />
-                    <p className="italic">No candidate members found in {selectedStatusModal.name} status.</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Student members currently registered under {selectedStatusModal.name} status
+                    </p>
                   </div>
-                )}
-              </div>
 
-              {/* Modal Footer */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between shrink-0">
-                <span className="text-xs text-gray-500 font-medium">
-                  Showing {activeStatusCandidates.length} candidate members
-                </span>
+                  <button
+                    onClick={() => setSelectedStatusModal(null)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-black hover:bg-gray-200/60 transition-all cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-                <button
-                  onClick={() => {
-                    const code = selectedStatusModal.code;
-                    setSelectedStatusModal(null);
-                    navigate(`/mapped-candidates?status=${code}`);
-                  }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  <span>Open Full Candidate Pipeline</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                {/* Search input inside modal */}
+                <div className="p-4 border-b border-gray-100 bg-white shrink-0">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      value={modalSearchQuery}
+                      onChange={(e) => setModalSearchQuery(e.target.value)}
+                      placeholder="Search candidate name, email, department, or company..."
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-[var(--gold-medium)]"
+                    />
+                  </div>
+                </div>
+
+                {/* Candidate Member List */}
+                <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
+                  {activeStatusCandidates.length > 0 ? (
+                    activeStatusCandidates.map((cand) => (
+                      <div
+                        key={cand.mappingId}
+                        className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 hover:bg-gray-100/70 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          {/* Student Avatar */}
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#111111] to-black text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                            {cand.studentName.substring(0, 2).toUpperCase()}
+                          </div>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-xs font-extrabold text-[#111111]">{cand.studentName}</h4>
+                              <span className="px-2 py-0.5 text-[10px] font-bold bg-gray-200/80 text-gray-700 rounded-md font-mono">
+                                {cand.department}
+                              </span>
+                              {cand.cgpa !== 'N/A' && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono">
+                                  CGPA: {cand.cgpa}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3 text-gray-400" />
+                                {cand.email}
+                              </span>
+                              <span className="flex items-center gap-1 font-semibold text-gray-700">
+                                <Briefcase className="w-3 h-3 text-gray-400" />
+                                {cand.jobRole} @ {cand.companyName}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status & Actions */}
+                        <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60">
+                          <span className="px-3 py-1 text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-mono">
+                            {(cand.status || 'applied').toUpperCase()}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              setSelectedStatusModal(null);
+                              navigate(`/mapped-candidates?status=${selectedStatusModal.code}`);
+                            }}
+                            className="px-3 py-1.5 bg-[#111111] text-white rounded-xl text-xs font-bold hover:bg-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                          >
+                            <span>Manage</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-16 text-center text-xs text-gray-400 space-y-2">
+                      <Users className="w-8 h-8 text-gray-300 mx-auto stroke-1" />
+                      <p className="italic">No candidate members found in {selectedStatusModal.name} status.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between shrink-0">
+                  <span className="text-xs text-gray-500 font-medium">
+                    Showing {activeStatusCandidates.length} candidate members
+                  </span>
+
+                  <button
+                    onClick={() => {
+                      const code = selectedStatusModal.code;
+                      setSelectedStatusModal(null);
+                      navigate(`/mapped-candidates?status=${code}`);
+                    }}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Open Full Candidate Pipeline</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <Toaster position="top-right" />
     </div>
