@@ -429,13 +429,6 @@ export default function NotificationBell({ userEmail }: { userEmail?: string }) 
                 </div>
               )}
             </div>
-
-            {/* Footer */}
-            <div className="p-3 border-t border-gray-100 bg-gray-50/40 text-center shrink-0">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono">
-                UDYOOG Real-time Engine
-              </span>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
