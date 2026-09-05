@@ -9,7 +9,7 @@ import {
 import {
   TrendingUp, Briefcase, Activity as ActivityIcon, Building2, Loader2, Sparkles,
   Users, Award, CheckCircle2, AlertTriangle, ArrowUpRight, Filter, Calendar,
-  DollarSign, Clock, Layers, ArrowRight, RefreshCw, ChevronRight, UserCheck, Search, X, Mail, GraduationCap
+  DollarSign, Clock, Layers, ArrowRight, RefreshCw, ChevronRight, UserCheck, Search, X, Mail, Globe, ExternalLink
 } from 'lucide-react';
 import Navigation from '../components/shared/Navigation';
 import StudentAnalytics from '../components/student/StudentAnalytics';
@@ -35,6 +35,7 @@ interface CompanyItem {
   company_name: string;
   industry?: string;
   website?: string;
+  location?: string;
   created_at?: string;
 }
 
@@ -90,6 +91,10 @@ export default function Analytics() {
   // Modal State for Candidate Detail Drill-down
   const [selectedStatusModal, setSelectedStatusModal] = useState<{ name: string; code: string } | null>(null);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
+
+  // Modal State for Active Companies Drill-down
+  const [selectedCompaniesModal, setSelectedCompaniesModal] = useState(false);
+  const [companyModalSearchQuery, setCompanyModalSearchQuery] = useState('');
 
   // Raw Database Data
   const [students, setStudents] = useState<ProfileItem[]>([]);
@@ -174,9 +179,9 @@ export default function Analytics() {
     };
   }, []);
 
-  // Lock background scrolling when drill-down modal is open
+  // Lock background scrolling when any drill-down modal is open
   useEffect(() => {
-    if (selectedStatusModal) {
+    if (selectedStatusModal || selectedCompaniesModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -184,7 +189,7 @@ export default function Analytics() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedStatusModal]);
+  }, [selectedStatusModal, selectedCompaniesModal]);
 
   // Open Candidate Detail Modal on click
   const openStatusCandidatesModal = (statusName: string) => {
@@ -233,9 +238,7 @@ export default function Analytics() {
 
   const filteredMappings = useMemo(() => {
     return mappings.filter((m) => {
-      // Must match filtered student
       if (filterDepartment !== 'all' && !filteredStudentIds.has(m.student_id)) return false;
-      // Must match filtered position
       if (filterCompany !== 'all' || filterJobStatus !== 'all' || filterYear !== 'all') {
         if (!filteredPositionIds.has(m.position_id)) return false;
       }
@@ -286,6 +289,57 @@ export default function Analytics() {
       );
     });
   }, [selectedStatusModal, filteredMappings, students, positions, modalSearchQuery]);
+
+  // Active Companies List for Drill-Down Modal
+  const activeCompaniesList = useMemo(() => {
+    const posMapByComp = new Map<string, { openRoles: number; totalApps: number; placed: number }>();
+
+    positions.forEach((p) => {
+      const compId = p.company_id || p.companies?.id || p.companies?.company_name || 'unknown';
+      if (!posMapByComp.has(compId)) {
+        posMapByComp.set(compId, { openRoles: 0, totalApps: 0, placed: 0 });
+      }
+      const item = posMapByComp.get(compId)!;
+      const st = (p.status || 'OPEN').toUpperCase();
+      if (st === 'OPEN' || st === 'ACTIVE') {
+        item.openRoles += 1;
+      }
+    });
+
+    const posIdToCompId = new Map<string, string>();
+    positions.forEach((p) => {
+      posIdToCompId.set(p.id, p.company_id || p.companies?.id || p.companies?.company_name || 'unknown');
+    });
+
+    mappings.forEach((m) => {
+      const compKey = posIdToCompId.get(m.position_id);
+      if (compKey && posMapByComp.has(compKey)) {
+        const item = posMapByComp.get(compKey)!;
+        item.totalApps += 1;
+        const st = (m.status || '').toLowerCase();
+        if (st === 'selected' || st === 'placed' || st === 'offered') {
+          item.placed += 1;
+        }
+      }
+    });
+
+    return companies.map((c) => {
+      const stats = posMapByComp.get(c.id) || posMapByComp.get(c.company_name) || { openRoles: 0, totalApps: 0, placed: 0 };
+      return {
+        ...c,
+        openRolesCount: stats.openRoles,
+        totalAppsCount: stats.totalApps,
+        placedCount: stats.placed
+      };
+    }).filter((c) => {
+      if (!companyModalSearchQuery) return true;
+      const q = companyModalSearchQuery.toLowerCase();
+      return (
+        c.company_name.toLowerCase().includes(q) ||
+        (c.industry || '').toLowerCase().includes(q)
+      );
+    }).sort((a, b) => b.openRolesCount - a.openRolesCount || b.totalAppsCount - a.totalAppsCount);
+  }, [companies, positions, mappings, companyModalSearchQuery]);
 
   // 1. TOP KPI CARDS CALCULATIONS
   const totalStudentsCount = filteredStudents.length;
@@ -779,14 +833,14 @@ export default function Analytics() {
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={fetchAllAnalyticsData}
-              className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:text-black hover:bg-gray-50 transition-all shadow-2xs cursor-pointer"
+              className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 hover:text-[var(--gold-medium)] hover:bg-amber-50/60 transition-all shadow-2xs cursor-pointer"
               title="Refresh Data"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => navigate('/mapped-candidates')}
-              className="px-4 py-2.5 bg-[#111111] text-white rounded-xl font-bold text-xs hover:bg-black transition-all cursor-pointer flex items-center gap-2 shadow-md"
+              className="px-4 py-2.5 bg-[var(--gold-medium)] text-white rounded-xl font-bold text-xs hover:bg-[#a55b00] transition-all cursor-pointer flex items-center gap-2 shadow-md"
             >
               <span>Manage Candidates</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -882,21 +936,25 @@ export default function Analytics() {
                 <p className="text-[10px] text-gray-400 font-medium mt-1">Enrolled Pool</p>
               </motion.div>
 
-              {/* Active Companies */}
+              {/* Active Companies (Clickable to open Active Companies Modal) */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all"
+                onClick={() => setSelectedCompaniesModal(true)}
+                className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:border-[var(--gold-medium)]/60"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-500">Active Companies</span>
+                  <span className="text-xs font-bold text-gray-500 group-hover:text-[var(--gold-medium)] transition-colors">Active Companies</span>
                   <div className="p-2 rounded-xl bg-amber-50 text-[var(--gold-medium)]">
                     <Building2 className="w-4 h-4" />
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-[#111111] font-mono">{activeCompaniesCount}</p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">Hiring Partners</p>
+                <p className="text-[10px] text-[var(--gold-medium)] font-bold mt-1 group-hover:underline flex items-center gap-1">
+                  <span>Click to view</span>
+                  <ChevronRight className="w-3 h-3" />
+                </p>
               </motion.div>
 
               {/* Open Positions */}
@@ -964,16 +1022,16 @@ export default function Analytics() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-gradient-to-br from-[#111111] to-black rounded-2xl p-4 text-white shadow-md hover:shadow-lg transition-all"
+                className="bg-gradient-to-br from-[#965300] to-[var(--gold-medium)] rounded-2xl p-4 text-white shadow-md hover:shadow-lg transition-all"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-gray-300">Placement Rate</span>
-                  <div className="p-2 rounded-xl bg-white/10 text-[var(--gold-medium)]">
+                  <span className="text-xs font-bold text-amber-100">Placement Rate</span>
+                  <div className="p-2 rounded-xl bg-white/20 text-white">
                     <Award className="w-4 h-4" />
                   </div>
                 </div>
-                <p className="text-2xl font-black font-mono text-[var(--gold-medium)]">{placementRate}%</p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">Campus Conversion</p>
+                <p className="text-2xl font-black font-mono text-white">{placementRate}%</p>
+                <p className="text-[10px] text-amber-100 font-medium mt-1">Campus Conversion</p>
               </motion.div>
             </div>
 
@@ -1022,7 +1080,7 @@ export default function Analytics() {
                 </div>
               </motion.div>
 
-              {/* Placement Funnel Progress Bar Card (Interactive Click) */}
+              {/* Placement Funnel Progress Bar Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1038,10 +1096,10 @@ export default function Analytics() {
                     <div
                       key={item.stage}
                       onClick={() => openStatusCandidatesModal(item.stage)}
-                      className="space-y-1.5 p-2 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group"
+                      className="space-y-1.5 p-2 rounded-xl hover:bg-amber-50/50 transition-all cursor-pointer group"
                     >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-700 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                        <span className="font-bold text-gray-700 group-hover:text-[var(--gold-medium)] transition-colors flex items-center gap-1.5">
                           <span>{item.stage}</span>
                           <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </span>
@@ -1141,9 +1199,9 @@ export default function Analytics() {
                   <div className="space-y-4">
                     {companyAnalytics.length > 0 ? (
                       companyAnalytics.map((comp) => (
-                        <div key={comp.id} className="p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-gray-100/60 transition-all flex items-center justify-between gap-3">
+                        <div key={comp.id} className="p-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-amber-50/50 transition-all flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center font-black text-xs text-[#111111] shrink-0 shadow-2xs">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--gold-medium)] to-amber-700 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
                               {comp.company_name.substring(0, 2).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -1165,16 +1223,16 @@ export default function Analytics() {
                 </div>
 
                 <button
-                  onClick={() => navigate('/companies')}
-                  className="w-full mt-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  onClick={() => setSelectedCompaniesModal(true)}
+                  className="w-full mt-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-[var(--gold-medium)] border border-amber-200/80 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>View All Companies</span>
+                  <span>View All Active Companies</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </motion.div>
             </div>
 
-            {/* 7. JOB STATUS & 8. APPLICATION STATUS (Interactive Clickable Slices and Rows) */}
+            {/* 7. JOB STATUS & 8. APPLICATION STATUS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {/* Application Status Donut Chart & List */}
               <motion.div
@@ -1231,7 +1289,7 @@ export default function Analytics() {
                         <span className="font-extrabold text-[#111111] font-mono bg-gray-100 px-2 py-0.5 rounded-lg group-hover:bg-amber-100">
                           {item.value}
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-black group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[var(--gold-medium)] group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </div>
                   ))}
@@ -1361,9 +1419,9 @@ export default function Analytics() {
                         <tr
                           key={role.id}
                           onClick={() => navigate(`/mapped-candidates?jobId=${role.id}`)}
-                          className="hover:bg-gray-50/80 transition-all cursor-pointer group"
+                          className="hover:bg-amber-50/50 transition-all cursor-pointer group"
                         >
-                          <td className="py-3 pl-2 font-bold text-[#111111] group-hover:text-blue-600 transition-colors">
+                          <td className="py-3 pl-2 font-bold text-[#111111] group-hover:text-[var(--gold-medium)] transition-colors">
                             {role.role || role.title}
                           </td>
                           <td className="py-3 text-gray-600">{role.companies?.company_name || 'Partner'}</td>
@@ -1446,9 +1504,9 @@ export default function Analytics() {
                   recentActivities.map((act) => (
                     <div
                       key={act.id}
-                      className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-gray-100/60 transition-all flex items-start gap-3"
+                      className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-amber-50/50 transition-all flex items-start gap-3"
                     >
-                      <div className="p-2 rounded-xl bg-white border border-gray-200 text-gray-700 shrink-0 shadow-2xs mt-0.5">
+                      <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-[var(--gold-medium)] shrink-0 shadow-2xs mt-0.5">
                         <Users className="w-4 h-4" />
                       </div>
 
@@ -1474,7 +1532,7 @@ export default function Analytics() {
         )}
       </div>
 
-      {/* INTERACTIVE CANDIDATE DRILL-DOWN MODAL (PORTAL TO BODY FOR PERFECT CENTERING) */}
+      {/* 1. INTERACTIVE CANDIDATE DRILL-DOWN MODAL */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {selectedStatusModal && (
@@ -1498,7 +1556,7 @@ export default function Analytics() {
                       <h3 className="text-base sm:text-lg font-extrabold text-[#111111]">
                         {selectedStatusModal.name} Candidates
                       </h3>
-                      <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-600 rounded-full border border-blue-200 font-mono">
+                      <span className="px-2.5 py-0.5 text-xs font-black bg-amber-50 text-[var(--gold-medium)] rounded-full border border-amber-200 font-mono">
                         {activeStatusCandidates.length} Members
                       </span>
                     </div>
@@ -1535,11 +1593,11 @@ export default function Analytics() {
                     activeStatusCandidates.map((cand) => (
                       <div
                         key={cand.mappingId}
-                        className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 hover:bg-gray-100/70 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 hover:bg-amber-50/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                       >
                         <div className="flex items-start gap-3.5 min-w-0">
-                          {/* Student Avatar */}
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#111111] to-black text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {/* Student Avatar in Logo Gold Accent */}
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--gold-medium)] to-amber-700 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
                             {cand.studentName.substring(0, 2).toUpperCase()}
                           </div>
 
@@ -1550,7 +1608,7 @@ export default function Analytics() {
                                 {cand.department}
                               </span>
                               {cand.cgpa !== 'N/A' && (
-                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono">
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono border border-amber-200/60">
                                   CGPA: {cand.cgpa}
                                 </span>
                               )}
@@ -1569,7 +1627,7 @@ export default function Analytics() {
                           </div>
                         </div>
 
-                        {/* Status & Actions */}
+                        {/* Status & Manage Button in Logo Gold */}
                         <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60">
                           <span className="px-3 py-1 text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-mono">
                             {(cand.status || 'applied').toUpperCase()}
@@ -1580,7 +1638,7 @@ export default function Analytics() {
                               setSelectedStatusModal(null);
                               navigate(`/mapped-candidates?status=${selectedStatusModal.code}`);
                             }}
-                            className="px-3 py-1.5 bg-[#111111] text-white rounded-xl text-xs font-bold hover:bg-black transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                            className="px-3.5 py-1.5 bg-[var(--gold-medium)] text-white rounded-xl text-xs font-bold hover:bg-[#a55b00] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span>Manage</span>
                             <ArrowRight className="w-3 h-3" />
@@ -1596,7 +1654,7 @@ export default function Analytics() {
                   )}
                 </div>
 
-                {/* Modal Footer */}
+                {/* Modal Footer in Logo Gold Accent */}
                 <div className="p-4 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between shrink-0">
                   <span className="text-xs text-gray-500 font-medium">
                     Showing {activeStatusCandidates.length} candidate members
@@ -1608,9 +1666,162 @@ export default function Analytics() {
                       setSelectedStatusModal(null);
                       navigate(`/mapped-candidates?status=${code}`);
                     }}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-2 bg-[var(--gold-medium)] text-white hover:bg-[#a55b00] rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm"
                   >
                     <span>Open Full Candidate Pipeline</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* 2. INTERACTIVE ACTIVE COMPANIES DRILL-DOWN MODAL */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedCompaniesModal && (
+            <div
+              className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
+              onClick={() => setSelectedCompaniesModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-200/90 overflow-hidden flex flex-col max-h-[85vh] my-auto text-left"
+              >
+                {/* Modal Header */}
+                <div className="p-5 sm:p-6 border-b border-gray-100 bg-gray-50/70 flex items-center justify-between shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-[var(--gold-medium)]" />
+                      <h3 className="text-base sm:text-lg font-extrabold text-[#111111]">
+                        Active Hiring Partners
+                      </h3>
+                      <span className="px-2.5 py-0.5 text-xs font-black bg-amber-50 text-[var(--gold-medium)] rounded-full border border-amber-200 font-mono">
+                        {activeCompaniesList.length} Companies
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Registered hiring partner companies actively recruiting on UDYOOG
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedCompaniesModal(false)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-black hover:bg-gray-200/60 transition-all cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Search input inside company modal */}
+                <div className="p-4 border-b border-gray-100 bg-white shrink-0">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      value={companyModalSearchQuery}
+                      onChange={(e) => setCompanyModalSearchQuery(e.target.value)}
+                      placeholder="Search company name or industry..."
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:border-[var(--gold-medium)]"
+                    />
+                  </div>
+                </div>
+
+                {/* Active Companies List */}
+                <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
+                  {activeCompaniesList.length > 0 ? (
+                    activeCompaniesList.map((comp) => (
+                      <div
+                        key={comp.id}
+                        className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 hover:bg-amber-50/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          {/* Company Logo Avatar */}
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--gold-medium)] to-amber-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+                            {comp.company_name.substring(0, 2).toUpperCase()}
+                          </div>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-xs font-extrabold text-[#111111]">{comp.company_name}</h4>
+                              {comp.industry && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-[var(--gold-medium)] rounded-md font-mono border border-amber-200/60">
+                                  {comp.industry}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                              {comp.website && (
+                                <a
+                                  href={comp.website.startsWith('http') ? comp.website : `https://${comp.website}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-1 hover:underline text-blue-600"
+                                >
+                                  <Globe className="w-3 h-3" />
+                                  <span>{comp.website.replace(/^https?:\/\//, '')}</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
+                              <span className="flex items-center gap-1 font-medium text-emerald-700">
+                                <Briefcase className="w-3 h-3 text-emerald-600" />
+                                {comp.openRolesCount} Open Positions
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Company Metrics & Action Button */}
+                        <div className="flex items-center gap-3 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200/60">
+                          <div className="text-right font-mono text-[11px] hidden sm:block">
+                            <span className="font-extrabold text-emerald-600">{comp.placedCount} Placed</span>
+                            <span className="text-gray-400 mx-1">•</span>
+                            <span className="text-gray-600 font-semibold">{comp.totalAppsCount} Apps</span>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setSelectedCompaniesModal(false);
+                              navigate('/companies');
+                            }}
+                            className="px-3.5 py-1.5 bg-[var(--gold-medium)] text-white rounded-xl text-xs font-bold hover:bg-[#a55b00] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <span>View Partner</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-16 text-center text-xs text-gray-400 space-y-2">
+                      <Building2 className="w-8 h-8 text-gray-300 mx-auto stroke-1" />
+                      <p className="italic">No active hiring partner companies found.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between shrink-0">
+                  <span className="text-xs text-gray-500 font-medium">
+                    Showing {activeCompaniesList.length} partner companies
+                  </span>
+
+                  <button
+                    onClick={() => {
+                      setSelectedCompaniesModal(false);
+                      navigate('/companies');
+                    }}
+                    className="px-4 py-2 bg-[var(--gold-medium)] text-white hover:bg-[#a55b00] rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <span>Manage All Companies</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
