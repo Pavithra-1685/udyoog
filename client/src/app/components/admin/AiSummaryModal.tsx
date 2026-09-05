@@ -41,6 +41,54 @@ function FormattedAiContent({ summary }: { summary: string }) {
     });
   };
 
+  const parseTableCellContent = (cellText: string) => {
+    if (!cellText) return null;
+
+    // Truncate UUIDs cleanly
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cellText.trim())) {
+      const uuid = cellText.trim();
+      return (
+        <span
+          title={uuid}
+          className="font-mono text-[11px] bg-gray-100 text-gray-700 px-2 py-1 rounded border border-gray-200 inline-block truncate max-w-[90px]"
+        >
+          {uuid.slice(0, 8)}…
+        </span>
+      );
+    }
+
+    // Split cell content by <br>, <br/>, <br />, &lt;br&gt;, or newline
+    const lines = cellText.split(/<br\s*\/?>|&lt;br\s*\/?&gt;|\n/gi);
+
+    if (lines.length > 1) {
+      return (
+        <div className="space-y-1.5 py-0.5">
+          {lines.map((line, idx) => {
+            const trimmed = line.trim();
+            if (!trimmed) return null;
+            const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+            const cleanLine = isBullet ? trimmed.replace(/^[•\-\*]\s*/, '') : trimmed;
+
+            return (
+              <div key={idx} className="flex items-start gap-1.5 text-xs md:text-sm text-gray-800 leading-snug">
+                {isBullet ? (
+                  <>
+                    <span className="text-[var(--gold-medium)] font-bold text-xs mt-0.5 shrink-0">•</span>
+                    <span className="flex-1">{parseInlineMarkdown(cleanLine)}</span>
+                  </>
+                ) : (
+                  <span className="flex-1">{parseInlineMarkdown(cleanLine)}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return parseInlineMarkdown(cellText);
+  };
+
   const renderMarkdownTable = (tableLines: string[]) => {
     const parsedRows = tableLines
       .map(line =>
@@ -61,12 +109,12 @@ function FormattedAiContent({ summary }: { summary: string }) {
     const bodyRows = dataRows.slice(1);
 
     return (
-      <div className="overflow-x-auto my-4 rounded-2xl border border-gray-200 shadow-sm bg-white">
-        <table className="w-full text-left border-collapse text-xs md:text-sm">
+      <div className="overflow-x-auto my-4 rounded-2xl border border-gray-200/90 shadow-sm bg-white max-w-full custom-scrollbar">
+        <table className="min-w-full text-left border-collapse text-xs md:text-sm">
           <thead>
             <tr className="bg-[#111111] text-white border-b border-gray-800 uppercase tracking-widest text-[10px]">
               {headers.map((h, i) => (
-                <th key={i} className="px-4 py-3 font-extrabold text-[var(--gold-medium)]">
+                <th key={i} className="px-4 py-3.5 font-extrabold text-[var(--gold-medium)] whitespace-nowrap">
                   {parseInlineMarkdown(h)}
                 </th>
               ))}
@@ -76,8 +124,8 @@ function FormattedAiContent({ summary }: { summary: string }) {
             {bodyRows.map((row, rIdx) => (
               <tr key={rIdx} className="hover:bg-amber-500/5 transition-colors">
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-4 py-3 text-gray-800 leading-relaxed font-medium">
-                    {parseInlineMarkdown(cell)}
+                  <td key={cIdx} className="px-4 py-3.5 align-top text-gray-800 leading-relaxed font-medium min-w-[120px] max-w-[300px] break-words">
+                    {parseTableCellContent(cell)}
                   </td>
                 ))}
               </tr>
