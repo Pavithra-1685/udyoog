@@ -75,12 +75,12 @@ export default function Analytics() {
   const categoryData = [
     {
       name: 'Existing Client',
-      value: companies.filter((c) => c.stage !== 'new_client').length,
+      value: companies.filter((c) => c.stage !== 'new_client' && c.stage !== 'initiation').length,
       color: 'var(--gold-medium)',
     },
     {
       name: 'New Client',
-      value: companies.filter((c) => c.stage === 'new_client').length,
+      value: companies.filter((c) => c.stage === 'new_client' || c.stage === 'initiation').length,
       color: '#3b82f6',
     },
   ];
